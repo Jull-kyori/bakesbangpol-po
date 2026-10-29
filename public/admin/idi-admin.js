@@ -18,11 +18,13 @@
 
   async function api(url, options) {
     const response = await fetch(url, options);
-    const result = await response.json().catch(() => ({}));
     if (response.status === 401) {
       location.href = '/admin/login.html?next=%2Fadmin%2Fidi.html';
       throw new Error('Sesi admin berakhir. Silakan masuk kembali.');
     }
+    let result;
+    try { result = await response.json(); }
+    catch { throw new Error('Respons server tidak valid.'); }
     if (!response.ok) throw new Error(result.error || 'Terjadi kesalahan.');
     return result;
   }

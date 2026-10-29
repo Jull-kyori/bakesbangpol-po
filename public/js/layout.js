@@ -230,12 +230,12 @@
       </button>
       <section id="asisten-panel" aria-label="Asisten informasi Bakesbangpol" class="absolute bottom-16 right-0 hidden w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-2xl bg-white text-ink shadow-2xl ring-1 ring-ink/15">
         <div class="flex items-center justify-between bg-ink px-4 py-3 text-white">
-          <div><h2 class="font-display font-bold">Asisten Bakesbangpol</h2><p class="text-xs text-white/75">Panduan otomatis situs</p></div>
+          <div><h2 class="font-display font-bold">Asisten Bakesbangpol</h2><p class="text-xs text-white/75">AI berbasis informasi situs</p></div>
           <button id="asisten-close" type="button" aria-label="Tutup asisten" class="rounded-lg px-2 py-1 text-white/80 hover:bg-white/10">Tutup</button>
         </div>
-        <p class="border-b border-ink/10 bg-cream px-4 py-2 text-xs leading-relaxed text-slate-600">Jawaban menggunakan panduan FAQ situs, bukan AI generatif. Jangan kirim data pribadi.</p>
+        <p class="border-b border-ink/10 bg-cream px-4 py-2 text-xs leading-relaxed text-slate-600">Pertanyaan dan konteks chat dikirim ke layanan AI Groq. Situs tidak menyimpan riwayat. Jangan kirim data pribadi atau rahasia; jawaban AI dapat keliru.</p>
         <div id="asisten-pesan" class="flex max-h-72 min-h-32 flex-col gap-3 overflow-y-auto p-4" aria-live="polite">
-          <p class="max-w-[90%] self-start rounded-xl rounded-tl-sm bg-cream px-3 py-2 text-sm">Halo! Saya bisa membantu mencari informasi tentang profil, bidang, berita, E-IDI, dan cara menghubungi Bakesbangpol.</p>
+          <p class="max-w-[90%] self-start rounded-xl rounded-tl-sm bg-cream px-3 py-2 text-sm">Halo! Tanyakan apa saja dengan kalimatmu sendiri. Saya membantu soal Bakesbangpol berdasarkan informasi situs dan bisa menjawab pertanyaan umum. Tombol di bawah hanya contoh.</p>
           <div class="flex flex-wrap gap-2">
             <button type="button" data-tanya="Apa tugas Bakesbangpol?" class="rounded-full px-3 py-1.5 text-xs font-semibold text-primary-dark ring-1 ring-primary-dark/30 hover:bg-primary/15">Tugas Bakesbangpol</button>
             <button type="button" data-tanya="Informasi berita" class="rounded-full px-3 py-1.5 text-xs font-semibold text-primary-dark ring-1 ring-primary-dark/30 hover:bg-primary/15">Berita</button>
@@ -244,7 +244,7 @@
         </div>
         <form id="asisten-form" class="flex gap-2 border-t border-ink/10 p-3">
           <label for="asisten-input" class="sr-only">Tulis pertanyaan</label>
-          <input id="asisten-input" maxlength="300" autocomplete="off" required placeholder="Tulis pertanyaan..." class="min-w-0 flex-1 rounded-lg border border-ink/20 px-3 py-2 text-sm" />
+          <input id="asisten-input" maxlength="300" autocomplete="off" required placeholder="Tanyakan apa saja..." class="min-w-0 flex-1 rounded-lg border border-ink/20 px-3 py-2 text-sm" />
           <button class="rounded-lg bg-primary px-3 py-2 text-sm font-bold text-ink hover:bg-accent hover:text-white">Kirim</button>
         </form>
       </section>
@@ -308,11 +308,25 @@
   const assistantPanel = document.getElementById('asisten-panel');
   const assistantInput = document.getElementById('asisten-input');
   const assistantMessages = document.getElementById('asisten-pesan');
-  const addAssistantMessage = (text, user) => {
+  let assistantBusy = false;
+  const assistantHistory = [];
+  const addAssistantMessage = (text, user, sources = []) => {
     const message = document.createElement('p');
     message.textContent = text;
     message.className = `max-w-[90%] whitespace-pre-line rounded-xl px-3 py-2 text-sm ${user ? 'self-end rounded-tr-sm bg-primary/25' : 'self-start rounded-tl-sm bg-cream'}`;
     assistantMessages.appendChild(message);
+    if (sources.length) {
+      const links = document.createElement('div');
+      links.className = 'flex max-w-[90%] flex-wrap gap-2';
+      sources.forEach((source) => {
+        const link = document.createElement('a');
+        link.href = source.url;
+        link.textContent = source.title;
+        link.className = 'rounded-full px-2.5 py-1 text-xs font-semibold text-primary-dark underline ring-1 ring-primary-dark/20 hover:bg-primary/15';
+        links.appendChild(link);
+      });
+      assistantMessages.appendChild(links);
+    }
     assistantMessages.scrollTop = assistantMessages.scrollHeight;
   };
   function answerAssistant(question) {
@@ -343,11 +357,48 @@
     }
     return 'Maaf, saya belum menemukan jawaban di panduan situs. Coba tanyakan tentang profil, bidang, berita, E-IDI, komentar, atau kontak.';
   }
-  function submitAssistant(question) {
+  async function submitAssistant(question) {
     const value = question.trim();
-    if (!value) return;
+    if (!value || assistantBusy) return;
+    assistantBusy = true;
     addAssistantMessage(value, true);
-    addAssistantMessage(answerAssistant(value), false);
+    const submitButton = document.querySelector('#asisten-form button');
+    assistantInput.disabled = true;
+    submitButton.disabled = true;
+    submitButton.textContent = '...';
+    try {
+      const response = await fetch('/api/asisten', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: value, history: assistantHistory.slice(-6) })
+      });
+      const result = await response.json();
+      if (!response.ok) {
+        const fallback = answerAssistant(value);
+        addAssistantMessage(`${result.error || 'Asisten AI belum tersedia.'}${fallback ? `\n\nPanduan situs: ${fallback}` : ''}`, false);
+        assistantHistory.push({ role: 'user', content: value }, { role: 'assistant', content: result.error || fallback });
+      } else {
+        addAssistantMessage(result.answer, false, result.sources || []);
+        assistantHistory.push(
+          { role: 'user', content: value },
+          {
+            role: 'assistant',
+            content: result.answer,
+            sourceIds: (result.sources || []).map((source) => source.id)
+          }
+        );
+      }
+    } catch {
+      const fallback = answerAssistant(value);
+      addAssistantMessage(`Asisten tidak dapat terhubung ke server.${fallback ? ` Panduan situs: ${fallback}` : ''}`, false);
+      assistantHistory.push({ role: 'user', content: value }, { role: 'assistant', content: fallback });
+    } finally {
+      assistantBusy = false;
+      assistantInput.disabled = false;
+      submitButton.disabled = false;
+      submitButton.textContent = 'Kirim';
+      assistantMessages.scrollTop = assistantMessages.scrollHeight;
+    }
   }
   assistantToggle.addEventListener('click', () => {
     const open = assistantPanel.classList.toggle('hidden') === false;

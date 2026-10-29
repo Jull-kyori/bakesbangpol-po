@@ -1,5 +1,6 @@
 node_modules
 .env
 data/komentar.json
+data/idi-audit.log
 public/uploads/*
 !public/uploads/.gitkeep

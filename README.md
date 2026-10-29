@@ -1,70 +1,72 @@
 # Website Bakesbangpol Kabupaten Ponorogo
 
-Website instansi (HTML + Tailwind CSS) dengan dashboard admin untuk mengunggah berita.
-Frontend murni HTML + Tailwind. Backend Express kecil hanya dipakai untuk login admin dan menyimpan berita ke `data/berita.json` (tanpa database).
+Website publik dan panel pengelola berbasis HTML, Tailwind CSS, dan Express. Fitur mencakup berita dan komentar, pengelolaan data E-IDI, serta asisten informasi yang dapat memakai Groq API. Data aplikasi disimpan dalam file JSON dan direktori unggahan; proyek ini belum memakai database.
 
-## Menjalankan
+## Menjalankan secara lokal
 
 Butuh Node.js 18 atau lebih baru.
 
-```bash
+```powershell
 npm install
-copy .env.example .env      # Windows (Mac/Linux: cp .env.example .env)
-# buka .env, ganti ADMIN_PASSWORD
+Copy-Item .env.example .env
+```
+
+Edit `.env` sebelum menjalankan server:
+
+- Ganti `ADMIN_PASSWORD` dengan password acak minimal 16 karakter.
+- Atur `GROQ_API_KEY` jika ingin mengaktifkan jawaban generatif asisten. Jangan masukkan key ke kode, browser, atau Git.
+- Untuk pengembangan lokal melalui HTTP, `COOKIE_SECURE=false` dapat dipakai. Produksi wajib menggunakan HTTPS dan `COOKIE_SECURE=true`.
+
+```powershell
 npm start
 ```
 
-- Website: http://localhost:3000
-- Admin:   http://localhost:3000/admin/  (masuk dengan ADMIN_PASSWORD)
+- Situs: <http://localhost:3000>
+- Admin berita: <http://localhost:3000/admin/>
+- Admin E-IDI: <http://localhost:3000/admin/idi.html>
 
-`public/css/output.css` sudah dikompilasi, jadi website langsung tampil. Jalankan perintah di bawah hanya jika kamu mengubah class Tailwind atau `src/input.css`:
+`public/css/output.css` sudah dikompilasi. Jalankan `npm run css` setelah mengubah kelas Tailwind atau `src/input.css`.
 
-```bash
-npm run dev:css     # otomatis memperbarui output.css saat file disimpan
-npm run css         # kompilasi sekali (minify), sebelum deploy
-```
+## Data dan penyimpanan
 
-## Struktur folder
+- `data/berita.json` menyimpan berita publik.
+- `data/idi.json` menyimpan data E-IDI.
+- Komentar, reaksi, dan laporan disimpan di `data/komentar.json` (diabaikan Git).
+- Gambar berita dan dokumen E-IDI disimpan di `public/uploads/`.
+- `data/idi-audit.log` mencatat waktu, IP, tindakan, dan ringkasan perubahan E-IDI. File ini diabaikan Git; batasi akses dan tetapkan masa retensi sesuai kebijakan instansi.
 
-```
-server.js            Express: login admin + API berita + upload gambar
-data/berita.json     Isi berita (di-backup bersama public/uploads)
-data/komentar.json   Komentar, balasan, reaksi, dan laporan moderasi
-src/input.css        Warna (@theme), font, gaya hero
-public/
-  index.html         Beranda: hero, akses cepat, profil, berita, bidang, struktur
-  berita.html        Daftar berita (filter kategori, pencarian, halaman)
-  berita-detail.html Detail satu berita
-  aspirasi.html      Panduan aspirasi dan kanal pengaduan resmi
-  kebijakan.html     Aturan komentar dan informasi privasi
-  js/layout.js       Header + footer + data kontak (objek SITE) untuk semua halaman
-  admin/             Login, dashboard berita, dan dashboard admin E-IDI
-  assets/img/        Taruh logo.png, hero.jpg, kantor.jpg di sini
-  uploads/           Gambar berita yang diunggah lewat admin
-```
+Cadangkan `data/` dan `public/uploads/` secara berkala ke media yang aksesnya dibatasi, dan uji pemulihan cadangan. Jangan mengunggah `.env`, backup berisi data pengguna, atau log audit ke repositori.
 
-## Yang perlu diisi/diganti sebelum tayang
+## Persiapan sebelum serah-terima/publikasi
 
-1. **Password admin** di `.env` (wajib).
-2. **Logo dan foto**: `public/assets/img/logo.png`, `hero.jpg` (foto kegiatan, latar hero), `kantor.jpg` (bagian profil). Jika file belum ada, tampilan memakai pengganti otomatis.
-3. **Kontak**: edit objek `SITE` di `public/js/layout.js` (alamat, telepon, email, jam layanan). Kolom yang kosong tidak ditampilkan.
-4. **Teks profil**: cocokkan dengan tugas pokok dan fungsi resmi di `public/index.html` (bagian `id="profil"`) dan deskripsi tiap bidang (bagian `id="bidang"`).
-5. **Nama dan gelar pejabat/staf** di bagian `id="struktur"`: cocokkan dengan data kepegawaian. Nama Kasubbag Umum dan Kepegawaian belum ada di bagan sumber.
-6. **Berita contoh**: hapus 3 berita "Contoh: ..." lewat dashboard admin.
-7. Menu **PPID** belum dibuat karena belum ada tautan resminya. Tambahkan kartu baru di bagian "AKSES CEPAT" `index.html` jika perlu.
+Konfirmasi dan isi bersama pihak Bakesbangpol:
 
-## Deploy singkat
+1. Logo, foto, alamat, telepon, email, jam layanan, profil, struktur pejabat, serta tautan kanal resmi.
+2. Berita contoh dan seluruh materi publik, termasuk hak penggunaan foto.
+3. Data, periode, rumus, sumber, dan dokumen pendukung E-IDI. Tren historis yang diberi label perlu verifikasi sumber jangan disajikan sebagai angka resmi sebelum sumbernya dikonfirmasi.
+4. Pengelola yang bertanggung jawab atas moderasi komentar, laporan, akun admin, backup, retensi log, dan permintaan penghapusan data.
+5. Persetujuan instansi atas pemrosesan pertanyaan chatbot oleh Groq dan penggunaan aset CDN eksternal yang dijelaskan pada halaman Kebijakan.
+6. Kebutuhan PPID dan tautan resminya. Halaman Aspirasi hanya mengarahkan ke kanal eksternal dan bukan sistem pengaduan tersimpan di situs.
 
-- Jalankan dengan `npm start` di server (disarankan pakai `pm2` agar tetap hidup) dan taruh di belakang Nginx/Apache dengan **HTTPS**.
-- Setelah HTTPS aktif, isi `COOKIE_SECURE=true` di `.env`.
-- Jika di belakang reverse proxy, tambahkan `app.set('trust proxy', 1);` di `server.js` agar pembatasan percobaan login membaca IP asli.
-- **Backup**: salin folder `data/` dan `public/uploads/` secara berkala.
-- Komentar publik tidak memerlukan akun. Komentar baru menunggu persetujuan admin sebelum tampil; admin dapat menyetujui, menolak, atau menghapus komentar beserta balasannya. Pengunjung dapat membalas komentar yang sudah tampil, memberi reaksi suka/tidak suka, melaporkan komentar, dan membagikan tautan berita. Komentar dibatasi 5 kiriman per IP tiap 10 menit.
-- Pengelolaan E-IDI berada terpisah di `/admin/idi.html` dan memerlukan sesi admin. Halaman publik `/idi.html` hanya menampilkan data, grafik, dan rekapitulasi.
-- Halaman Aspirasi menjelaskan kanal pengaduan eksternal yang resmi, tanpa menyimpan pengaduan langsung di situs. Halaman Kebijakan menjelaskan aturan komentar dan data yang digunakan.
-- Tombol aksesibilitas mengatur ukuran teks dan kontras; asisten informasi di pojok kanan menjawab panduan FAQ lokal tanpa API AI atau mengirim pertanyaan ke layanan pihak ketiga.
+## Deploy dan batas operasional
 
-## Keamanan yang sudah ada
+Sebelum menjalankan `npm start` di produksi, atur `NODE_ENV=production`, `ADMIN_PASSWORD` acak minimal 16 karakter, dan `COOKIE_SECURE=true`. Server akan menolak startup produksi jika persyaratan password atau cookie HTTPS tidak terpenuhi. Simpan `GROQ_API_KEY` sebagai secret di lingkungan server jika AI diaktifkan.
 
-Password dibandingkan dengan `timingSafeEqual`, cookie sesi `HttpOnly` + `SameSite=Strict`, maksimal 5 percobaan login per 15 menit per IP, upload dibatasi JPG/PNG/WebP maksimal 3 MB dengan nama file acak, semua teks berita di-escape saat ditampilkan (tidak bisa menyisipkan HTML/JS), dan tulis file JSON secara atomik.
-Yang belum ada: banyak akun admin dan riwayat perubahan. Untuk kebutuhan itu, ganti `data/berita.json` dengan database (mis. SQLite).
+Tempatkan aplikasi di belakang HTTPS yang dikelola instansi. Bila menggunakan reverse proxy, set `TRUST_PROXY_HOPS` ke jumlah hop proxy yang tepercaya dan dikendalikan sendiri (misalnya `1` untuk satu proxy); jangan percaya header proxy dari klien langsung.
+
+Penyimpanan file JSON, sesi admin, pembatasan laju, dan percobaan login berada di disk lokal atau memori satu proses. Karena itu:
+
+- Gunakan satu instance aplikasi dan disk persisten. Restart mengakhiri sesi dan menghapus penghitung laju di memori.
+- Jangan menjalankan beberapa instance atau memakai filesystem sementara/ephemeral tanpa lebih dulu memindahkan data, sesi, dan rate limiter ke penyimpanan bersama yang sesuai.
+- Implementasi ini memakai satu password admin bersama, tanpa akun per orang atau MFA. Tinjau kecukupannya untuk kebijakan keamanan instansi sebelum dibuka ke publik.
+- Tetapkan backup, retensi, akses log, pemantauan, dan prosedur pemulihan dengan pengelola sistem.
+
+## Fitur publik
+
+Komentar tidak memerlukan akun dan menunggu persetujuan admin. Pengunjung dapat membalas komentar, memberi reaksi suka/tidak suka, melaporkan komentar, dan membagikan tautan berita. Asisten informasi dapat menjawab pertanyaan bebas dengan Groq jika API key tersedia; pertanyaan dan konteks percakapan terbaru dikirim ke penyedia tersebut, sehingga pengguna harus menghindari data pribadi atau rahasia. Rincian pemrosesan data ada di halaman Kebijakan.
+
+## Perintah
+
+- `npm start` — menjalankan server.
+- `npm run css` — membangun CSS minified.
+- `npm run dev:css` — memantau perubahan CSS Tailwind.

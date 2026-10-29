@@ -130,7 +130,9 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(body)
           });
-          const data = await response.json().catch(() => ({}));
+          let data;
+          try { data = await response.json(); }
+          catch { throw new Error('Respons server tidak valid. Silakan coba lagi.'); }
           if (!response.ok) throw new Error(data.error || 'Permintaan gagal. Silakan coba lagi.');
           return data;
         }
@@ -263,10 +265,15 @@
       }
 
       try {
-        const d = await fetch('/api/berita?limit=4').then((r) => r.json());
+        const response = await fetch('/api/berita?limit=4');
+        if (!response.ok) throw new Error('Berita terkait belum dapat dimuat.');
+        const d = await response.json();
+        if (!Array.isArray(d.items)) throw new Error('Respons berita terkait tidak valid.');
         const lain = d.items.filter((b) => b.id !== id).slice(0, 3);
         document.getElementById('lain').innerHTML = lain.map((b) => cardBerita(b)).join('');
-      } catch {}
+      } catch {
+        document.getElementById('lain').textContent = 'Berita terkait belum dapat dimuat.';
+      }
     })();
   </script>
 </body>

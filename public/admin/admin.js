@@ -9,7 +9,9 @@
   async function api(url, opts) {
     const r = await fetch(url, opts);
     if (r.status === 401) { location.href = '/admin/login.html'; throw new Error('Sesi berakhir.'); }
-    const d = await r.json().catch(() => ({}));
+    let d;
+    try { d = await r.json(); }
+    catch { throw new Error('Respons server tidak valid.'); }
     if (!r.ok) throw new Error(d.error || 'Terjadi kesalahan.');
     return d;
   }
@@ -228,6 +230,8 @@
       await loadKategori();
       await loadList();
       await loadModeration();
-    } catch (e) { /* sudah dialihkan ke halaman login */ }
+    } catch (e) {
+      if (!location.pathname.endsWith('/login.html')) toast(e.message, false);
+    }
   })();
 })();
