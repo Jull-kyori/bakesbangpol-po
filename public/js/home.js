@@ -98,7 +98,9 @@
       if (typeof d.skorTotal !== 'number' || !d.aspek.length) throw new Error('kosong');
       const k = kategori(d.skorTotal);
       $('#idi-skor').textContent = fmt(d.skorTotal, 2) + '%';
-      $('#idi-tahun').textContent = d.tahun ? '(' + d.tahun + ')' : '';
+      $('#idi-tahun').textContent = d.tahun
+        ? '(' + d.tahun + (d.periodeData ? ' · data utama ' + d.periodeData : '') + ')'
+        : '';
       const kat = $('#idi-kat');
       kat.textContent = k.t;
       kat.className = 'rounded-full px-3 py-1 text-sm font-bold ' + k.cls;

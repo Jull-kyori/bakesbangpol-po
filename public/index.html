@@ -316,39 +316,48 @@
           `<img src="${esc(b.gambar)}" alt="" class="absolute inset-0 h-full w-full object-cover transition-opacity duration-1000 ${i === 0 ? 'opacity-100' : 'opacity-0'}">`
         ).join('');
         const imgs = wrap.querySelectorAll('img');
+        const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
         let cur = 0, timer;
-
-        function caption() {
-          const b = slides[cur];
-          cap.classList.remove('hidden');
-          cap.innerHTML = `
-            <p class="text-sm text-white/70">Berita terbaru</p>
-            <a href="/berita-detail.html?id=${encodeURIComponent(b.id)}" class="mt-1 block font-display text-base font-bold leading-snug text-white hover:text-primary">${esc(b.judul)}</a>
-            <div class="mt-3 flex gap-2">
-              ${slides.map((_, i) => `<button type="button" data-i="${i}" aria-label="Slide ${i + 1}" class="h-2 rounded-full transition-all ${i === cur ? 'w-6 bg-primary' : 'w-2 bg-white/50 hover:bg-white'}"></button>`).join('')}
-            </div>`;
-        }
+        cap.innerHTML = `
+          <p class="text-sm text-white/70">Berita terbaru</p>
+          <a data-slide-link class="mt-1 block font-display text-base font-bold leading-snug text-white hover:text-primary"></a>
+          ${slides.length > 1 ? `<div class="mt-3 flex gap-2" role="group" aria-label="Pilih berita unggulan">
+            ${slides.map((_, i) => `<button type="button" data-i="${i}" aria-label="Slide ${i + 1} dari ${slides.length}" class="h-2 rounded-full transition-all ${i === cur ? 'w-6 bg-primary' : 'w-2 bg-white/50 hover:bg-white'}"></button>`).join('')}
+          </div>` : ''}`;
 
         function go(i) {
-          imgs[cur].classList.replace('opacity-100', 'opacity-0');
+          const previous = cur;
           cur = i;
+          imgs[previous].classList.replace('opacity-100', 'opacity-0');
           imgs[cur].classList.replace('opacity-0', 'opacity-100');
-          caption();
+          const slide = slides[cur];
+          const link = cap.querySelector('[data-slide-link]');
+          link.href = '/berita-detail.html?id=' + encodeURIComponent(slide.id);
+          link.textContent = slide.judul;
+          cap.querySelectorAll('[data-i]').forEach((button, index) => {
+            button.classList.toggle('w-6', index === cur);
+            button.classList.toggle('bg-primary', index === cur);
+            button.classList.toggle('w-2', index !== cur);
+            button.classList.toggle('bg-white/50', index !== cur);
+            if (index === cur) button.setAttribute('aria-current', 'true');
+            else button.removeAttribute('aria-current');
+          });
         }
 
-        function start() {
+        function startSlideshow() {
           clearInterval(timer);
-          const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-          if (slides.length > 1 && !reduce) timer = setInterval(() => go((cur + 1) % slides.length), 5000);
+          if (slides.length > 1 && !reduceMotion) timer = setInterval(() => go((cur + 1) % slides.length), 5000);
         }
 
-        cap.addEventListener('click', (e) => {
-          const b = e.target.closest('[data-i]');
-          if (b) { go(+b.dataset.i); start(); }
+        cap.addEventListener('click', (event) => {
+          const button = event.target.closest('[data-i]');
+          if (!button) return;
+          go(Number(button.dataset.i));
+          startSlideshow();
         });
 
-        caption();
-        start();
+        go(0);
+        startSlideshow();
       } catch (e) { console.error('Slideshow gagal:', e); } 
     })();
   </script>

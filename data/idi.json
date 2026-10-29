@@ -1,7 +1,8 @@
 {
   "tahun": 2026,
+  "periodeData": 2025,
   "skorTotal": 81.06,
-  "sumberTren": "Terverifikasi BPS",
+  "sumberTren": "Data historis perlu verifikasi sumber",
   "aspek": [
     {
       "kode": "Kebebasan Sipil",
@@ -59,34 +60,224 @@
   ],
   "indikator": [
     {
-      "id": "contoh1",
+      "id": "idi-2026-01",
       "aspek": "Kebebasan Sipil",
-      "indikator": "Kebebasan Berkumpul dan Berserikat",
-      "catatan": "Tidak ada pembatasan atau pembubaran kegiatan ormas yang sah oleh aparat.",
+      "indikator": "Terjaminnya kebebasan berkumpul, berserikat, berekspresi, dan berpendapat oleh aparat negara",
+      "catatan": "Laporan tidak menemukan publikasi resmi tentang pembatasan melawan hukum oleh aparat atau putusan pelanggaran terkait selama 2025. Sumber: Laporan Akhir IDI Ponorogo 2026, hlm. 55, 63.",
       "skor": 100,
       "dokumen": "",
       "dokumenNama": "",
-      "updatedAt": "2026-10-27T00:00:00.000Z"
+      "updatedAt": "2026-10-29T17:07:31.959Z"
     },
     {
-      "id": "contoh2",
+      "id": "idi-2026-02",
+      "aspek": "Kebebasan Sipil",
+      "indikator": "Terjaminnya kebebasan berkumpul, berserikat, berekspresi, dan berpendapat antar masyarakat",
+      "catatan": "Laporan tidak menemukan kebijakan yang membatasi hak tersebut; kegiatan organisasi dan penyampaian aspirasi berlangsung. Sumber: Laporan Akhir IDI Ponorogo 2026, hlm. 55, 63.",
+      "skor": 100,
+      "dokumen": "",
+      "dokumenNama": "",
+      "updatedAt": "2026-10-29T17:07:31.959Z"
+    },
+    {
+      "id": "idi-2026-03",
+      "aspek": "Kebebasan Sipil",
+      "indikator": "Terjaminnya kebebasan berkeyakinan",
+      "catatan": "Laporan tidak menemukan laporan ancaman atau kekerasan terhadap kebebasan berkeyakinan di Ponorogo selama 2025. Sumber: Laporan Akhir IDI Ponorogo 2026, hlm. 55, 63.",
+      "skor": 100,
+      "dokumen": "",
+      "dokumenNama": "",
+      "updatedAt": "2026-10-29T17:07:31.959Z"
+    },
+    {
+      "id": "idi-2026-04",
+      "aspek": "Kebebasan Sipil",
+      "indikator": "Terjaminnya kebebasan berkumpul, berserikat, berekspresi, berpendapat, dan berkeyakinan dalam setiap kebijakan",
+      "catatan": "Laporan menyatakan kebijakan daerah berpedoman pada peraturan yang melindungi hak berserikat, berkumpul, berpendapat, dan berkeyakinan. Sumber: Laporan Akhir IDI Ponorogo 2026, hlm. 55–56, 63.",
+      "skor": 100,
+      "dokumen": "",
+      "dokumenNama": "",
+      "updatedAt": "2026-10-29T17:07:31.959Z"
+    },
+    {
+      "id": "idi-2026-05",
+      "aspek": "Kebebasan Sipil",
+      "indikator": "Terbebas dari hambatan/gangguan dalam penggunaan hak pilih dalam pemilu",
+      "catatan": "Tahun data 2025 bukan periode Pemilu/Pilkada. Laporan menyebut indikator tidak dapat dinilai, tetapi mencatat indeks 0 pada tabel perhitungan; angka ini bukan temuan terukur tentang pelanggaran hak pilih. Sumber: Laporan Akhir IDI Ponorogo 2026, hlm. 56, 61, 63–64.",
+      "skor": 0,
+      "dokumen": "",
+      "dokumenNama": "",
+      "updatedAt": "2026-10-29T17:07:31.959Z"
+    },
+    {
+      "id": "idi-2026-06",
+      "aspek": "Kebebasan Sipil",
+      "indikator": "Pemenuhan hak-hak pekerja",
+      "catatan": "Indeks yang dilaporkan sebesar 84,16%; laporan mengacu pada cakupan kepesertaan BPJS Kesehatan per 1 Juli 2026. Sumber: Laporan Akhir IDI Ponorogo 2026, hlm. 56, 63–64.",
+      "skor": 84.16,
+      "dokumen": "",
+      "dokumenNama": "",
+      "updatedAt": "2026-10-29T17:07:31.959Z"
+    },
+    {
+      "id": "idi-2026-07",
+      "aspek": "Kebebasan Sipil",
+      "indikator": "Pers yang bebas dalam menjalankan fungsinya",
+      "catatan": "Indeks Kemerdekaan Pers khusus kabupaten belum tersedia; laporan menggunakan nilai Provinsi Jawa Timur sebesar 67,87%. Sumber: Laporan Akhir IDI Ponorogo 2026, hlm. 56, 63–64.",
+      "skor": 67.87,
+      "dokumen": "",
+      "dokumenNama": "",
+      "updatedAt": "2026-10-29T17:07:31.959Z"
+    },
+    {
+      "id": "idi-2026-08",
       "aspek": "Kesetaraan Politik",
-      "indikator": "Akses Warga Miskin pada Jaminan Sosial",
-      "catatan": "Persentase penduduk miskin terjangkau layanan kesehatan JKN/BPJS.",
+      "indikator": "Kesetaraan gender",
+      "catatan": "IDG Kabupaten belum dipublikasikan. Laporan menghitung indeks dari 1 dikurangi IKG 0,299, sehingga diperoleh 70,10%. Sumber: Laporan Akhir IDI Ponorogo 2026, hlm. 57, 65.",
+      "skor": 70.10,
+      "dokumen": "",
+      "dokumenNama": "",
+      "updatedAt": "2026-10-29T17:07:31.959Z"
+    },
+    {
+      "id": "idi-2026-09",
+      "aspek": "Kesetaraan Politik",
+      "indikator": "Partisipasi masyarakat dalam memengaruhi kebijakan publik melalui lembaga perwakilan",
+      "catatan": "Laporan menyebut 20 rapat paripurna pada 2025 melibatkan masyarakat; rekapitulasi lengkap hearing dan forum belum tersedia. Sumber: Laporan Akhir IDI Ponorogo 2026, hlm. 57, 65.",
+      "skor": 100,
+      "dokumen": "",
+      "dokumenNama": "",
+      "updatedAt": "2026-10-29T17:07:31.959Z"
+    },
+    {
+      "id": "idi-2026-10",
+      "aspek": "Kesetaraan Politik",
+      "indikator": "Anti monopoli sumber daya ekonomi",
+      "catatan": "Indeks tingkat kabupaten belum tersedia. Laporan menggunakan Indeks Persaingan Usaha Provinsi Jawa Timur 5,14 dari skala 7, setara 73,43%. Sumber: Laporan Akhir IDI Ponorogo 2026, hlm. 57, 65.",
+      "skor": 73.43,
+      "dokumen": "",
+      "dokumenNama": "",
+      "updatedAt": "2026-10-29T17:07:31.959Z"
+    },
+    {
+      "id": "idi-2026-11",
+      "aspek": "Kesetaraan Politik",
+      "indikator": "Akses warga miskin pada perlindungan dan jaminan sosial",
+      "catatan": "Laporan menggunakan persentase penduduk yang memiliki jaminan kesehatan BPJS Kesehatan di Ponorogo pada 2025, sebesar 61,05%. Sumber: Laporan Akhir IDI Ponorogo 2026, hlm. 57, 65.",
       "skor": 61.05,
       "dokumen": "",
       "dokumenNama": "",
-      "updatedAt": "2026-10-27T00:00:01.000Z"
+      "updatedAt": "2026-10-29T17:07:31.959Z"
     },
     {
-      "id": "contoh3",
-      "aspek": "Lembaga Demokrasi",
-      "indikator": "Kinerja Birokrasi dalam Pelayanan Publik",
-      "catatan": "Indeks Pelayanan Publik (IPP) berdasarkan evaluasi KemenPANRB.",
-      "skor": 91.8,
+      "id": "idi-2026-12",
+      "aspek": "Kesetaraan Politik",
+      "indikator": "Kesetaraan kesempatan kerja antar wilayah",
+      "catatan": "Tingkat Kesempatan Kerja dihitung sebagai 100% dikurangi Tingkat Pengangguran Terbuka 3,85%, menghasilkan 96,15%. Sumber: Laporan Akhir IDI Ponorogo 2026, hlm. 58, 65.",
+      "skor": 96.15,
       "dokumen": "",
       "dokumenNama": "",
-      "updatedAt": "2026-10-27T00:00:02.000Z"
+      "updatedAt": "2026-10-29T17:07:31.959Z"
+    },
+    {
+      "id": "idi-2026-13",
+      "aspek": "Kesetaraan Politik",
+      "indikator": "Akses masyarakat terhadap informasi publik",
+      "catatan": "Laporan PPID 2025 mencatat 51 permintaan informasi, tanpa permohonan keberatan maupun penolakan. Sumber: Laporan Akhir IDI Ponorogo 2026, hlm. 58, 65.",
+      "skor": 100,
+      "dokumen": "",
+      "dokumenNama": "",
+      "updatedAt": "2026-10-29T17:07:31.959Z"
+    },
+    {
+      "id": "idi-2026-14",
+      "aspek": "Kesetaraan Politik",
+      "indikator": "Kesetaraan dalam pelayanan dasar",
+      "catatan": "Indeks yang dilaporkan 86,24%, berdasarkan rata-rata akses air minum layak 92,63%, sanitasi layak 88,54%, APM SD/MI 99,48%, SMP/MTs 82,76%, dan SMA/SMK/MA 67,81%. Nilai 86,24% konsisten dengan rata-rata angka tersebut. Sumber: Laporan Akhir IDI Ponorogo 2026, hlm. 58–59, 65–66.",
+      "skor": 86.24,
+      "dokumen": "",
+      "dokumenNama": "",
+      "updatedAt": "2026-10-29T17:07:31.959Z"
+    },
+    {
+      "id": "idi-2026-15",
+      "aspek": "Lembaga Demokrasi",
+      "indikator": "Kinerja lembaga legislatif",
+      "catatan": "Laporan mencatat 9 Perda disahkan dari 9 Raperda prioritas dalam Propemperda 2025; indeks 100%. Sumber: Laporan Akhir IDI Ponorogo 2026, hlm. 59, 66.",
+      "skor": 100,
+      "dokumen": "",
+      "dokumenNama": "",
+      "updatedAt": "2026-10-29T17:07:31.959Z"
+    },
+    {
+      "id": "idi-2026-16",
+      "aspek": "Lembaga Demokrasi",
+      "indikator": "Kinerja lembaga yudikatif",
+      "catatan": "Laporan mencatat 336 putusan dari 399 perkara pada 2025. Tabel perhitungan aspek menggunakan indeks 84,21% (336/399); terdapat angka 84,41% yang berbeda pada uraian laporan. Sumber: Laporan Akhir IDI Ponorogo 2026, hlm. 59, 66–67.",
+      "skor": 84.21,
+      "dokumen": "",
+      "dokumenNama": "",
+      "updatedAt": "2026-10-29T17:07:31.959Z"
+    },
+    {
+      "id": "idi-2026-17",
+      "aspek": "Lembaga Demokrasi",
+      "indikator": "Netralitas penyelenggara pemilu",
+      "catatan": "Tahun data 2025 bukan periode Pemilu/Pilkada. Laporan menyebut indikator tidak dapat dinilai, tetapi mencatat indeks 0 pada tabel perhitungan; angka ini bukan temuan terukur tentang keberpihakan penyelenggara. Sumber: Laporan Akhir IDI Ponorogo 2026, hlm. 59, 61, 66–67.",
+      "skor": 0,
+      "dokumen": "",
+      "dokumenNama": "",
+      "updatedAt": "2026-10-29T17:07:31.959Z"
+    },
+    {
+      "id": "idi-2026-18",
+      "aspek": "Lembaga Demokrasi",
+      "indikator": "Keputusan Pengadilan Tata Usaha Negara (PTUN) terkait kebijakan pejabat pemerintah",
+      "catatan": "Laporan tidak menemukan putusan PTUN Surabaya pada 2025 yang menyatakan kebijakan atau keputusan pejabat Pemkab Ponorogo bersalah atau dibatalkan. Sumber: Laporan Akhir IDI Ponorogo 2026, hlm. 59, 66.",
+      "skor": 100,
+      "dokumen": "",
+      "dokumenNama": "",
+      "updatedAt": "2026-10-29T17:07:31.959Z"
+    },
+    {
+      "id": "idi-2026-19",
+      "aspek": "Lembaga Demokrasi",
+      "indikator": "Jaminan pemerintah daerah terhadap pelestarian lingkungan dan ruang hidup masyarakat",
+      "catatan": "Indeks Kualitas Lingkungan Hidup Kabupaten Ponorogo tahun 2025 sebesar 73,73%. Sumber: Laporan Akhir IDI Ponorogo 2026, hlm. 60, 66–67.",
+      "skor": 73.73,
+      "dokumen": "",
+      "dokumenNama": "",
+      "updatedAt": "2026-10-29T17:07:31.959Z"
+    },
+    {
+      "id": "idi-2026-20",
+      "aspek": "Lembaga Demokrasi",
+      "indikator": "Transparansi anggaran dalam bentuk penyediaan informasi APBD oleh pemerintah",
+      "catatan": "Laporan menyatakan dokumen utama APBD 2025, ringkasan APBD, dan LKPD telah dipublikasikan. Sumber: Laporan Akhir IDI Ponorogo 2026, hlm. 60, 66–67.",
+      "skor": 100,
+      "dokumen": "",
+      "dokumenNama": "",
+      "updatedAt": "2026-10-29T17:07:31.959Z"
+    },
+    {
+      "id": "idi-2026-21",
+      "aspek": "Lembaga Demokrasi",
+      "indikator": "Kinerja birokrasi dalam pelayanan publik",
+      "catatan": "Indeks Pelayanan Publik 2025 sebesar 4,59 dari maksimal 5, dengan predikat A (Pelayanan Prima), setara indeks 91,80%. Sumber: Laporan Akhir IDI Ponorogo 2026, hlm. 60, 67.",
+      "skor": 91.80,
+      "dokumen": "",
+      "dokumenNama": "",
+      "updatedAt": "2026-10-29T17:07:31.959Z"
+    },
+    {
+      "id": "idi-2026-22",
+      "aspek": "Lembaga Demokrasi",
+      "indikator": "Pendidikan Politik pada Kader Partai Politik",
+      "catatan": "Laporan menyebut 53 kegiatan pendidikan politik oleh 9 partai politik pada 2025; indeks 100%. Sumber: Laporan Akhir IDI Ponorogo 2026, hlm. 60–61, 66–67.",
+      "skor": 100,
+      "dokumen": "",
+      "dokumenNama": "",
+      "updatedAt": "2026-10-29T17:07:31.959Z"
     }
   ]
 }

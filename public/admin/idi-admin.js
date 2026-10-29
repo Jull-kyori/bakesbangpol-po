@@ -36,7 +36,9 @@
   async function loadData() {
     const result = await api('/api/idi');
     data = result;
-    $('#stat-tahun').textContent = result.tahun || '-';
+    $('#stat-tahun').textContent = result.tahun
+      ? result.tahun + (result.periodeData ? ' (data utama ' + result.periodeData + ')' : '')
+      : '-';
     $('#stat-skor').textContent = typeof result.skorTotal === 'number' ? result.skorTotal.toFixed(2) + '%' : '-';
     $('#stat-jumlah').textContent = result.indikator.length;
     renderTable();

@@ -11,7 +11,9 @@
   }
 
   function renderSummary() {
-    $('#tahunAnggaran').textContent = data.tahun ? 'Tahun Anggaran ' + data.tahun : '';
+    $('#tahunAnggaran').textContent = data.tahun
+      ? 'Tahun kajian ' + data.tahun + (data.periodeData ? ' · Data utama ' + data.periodeData : '')
+      : '';
     if (typeof data.skorTotal === 'number') {
       const scoreCategory = kategori(data.skorTotal);
       $('#skorTotal').textContent = data.skorTotal.toFixed(2) + '%';

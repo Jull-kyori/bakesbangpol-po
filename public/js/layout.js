@@ -73,7 +73,10 @@
     // Menu desktop: submenu meluncur turun saat disorot kursor atau difokus keyboard
     const desktop = MENU.map((m) => {
       const spy = m.spy ? ` data-spy="${m.spy}"` : '';
-      if (!m.sub) return `<a href="${m.h}" class="nav-link ${m.t === 'Aspirasi' ? 'text-primary' : ''}"${spy}>${m.t}</a>`;
+      const currentPage = !m.h.includes('#') && new URL(m.h, location.href).pathname === location.pathname;
+      const activeClass = currentPage ? ' text-primary' : '';
+      const current = currentPage ? ' aria-current="page"' : '';
+      if (!m.sub) return `<a href="${m.h}" class="nav-link${activeClass}"${current}${spy}>${m.t}</a>`;
       return `<div class="group relative">
         <a href="${m.h}" class="nav-link inline-flex items-center gap-1.5"${spy}>${m.t}${chevron('group-hover:rotate-180 group-focus-within:rotate-180')}</a>
         <div class="invisible absolute left-1/2 top-full z-40 w-72 -translate-x-1/2 translate-y-2 pt-3 opacity-0 transition-all duration-200 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100">
@@ -85,13 +88,17 @@
     }).join('');
 
     // Menu HP: submenu berupa daftar yang bisa dibuka-tutup
-    const mobile = MENU.map((m) => m.sub
+    const mobile = MENU.map((m) => {
+      const currentPage = !m.h.includes('#') && new URL(m.h, location.href).pathname === location.pathname;
+      const activeClass = currentPage ? ' text-primary' : '';
+      const current = currentPage ? ' aria-current="page"' : '';
+      return m.sub
       ? `<details class="border-t border-white/10">
           <summary class="flex cursor-pointer list-none items-center justify-between py-3 text-sm font-medium focus-visible:rounded">${m.t}${chevron('')}</summary>
           <div class="pb-2 pl-4">${m.sub.map(([t, h]) => `<a href="${h}" class="block py-2 text-sm text-white/80 hover:text-primary">${t}</a>`).join('')}</div>
         </details>`
-      : `<a href="${m.h}" class="block border-t border-white/10 py-3 text-sm font-medium hover:text-primary ${m.t === 'Aspirasi' ? 'text-primary' : ''}">${m.t}</a>`
-    ).join('');
+      : `<a href="${m.h}" class="block border-t border-white/10 py-3 text-sm font-medium hover:text-primary${activeClass}"${current}>${m.t}</a>`;
+    }).join('');
 
     header.innerHTML = `
       <div id="header-bar" class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 transition-all duration-300 sm:px-6 sm:py-4">

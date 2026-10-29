@@ -19,10 +19,11 @@
 
     <form id="filter" class="mt-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
       <div id="chips" class="flex flex-wrap gap-2"></div>
-      <div class="flex gap-2">
+      <div class="flex flex-wrap gap-2">
         <label for="q" class="sr-only">Cari berita</label>
         <input id="q" type="search" placeholder="Cari berita" class="w-full rounded-full border border-ink/20 bg-white px-5 py-2 text-sm md:w-72" />
         <button class="rounded-full bg-ink px-5 py-2 text-sm font-semibold text-white hover:bg-accent">Cari</button>
+        <button id="reset-filter" type="button" class="hidden rounded-full px-5 py-2 text-sm font-semibold text-primary-dark ring-1 ring-primary-dark/30 hover:bg-primary/15">Hapus filter</button>
       </div>
     </form>
 
@@ -38,26 +39,46 @@
       const { esc, cardBerita } = window.BK;
       const params = new URLSearchParams(location.search);
       const state = { kategori: params.get('kategori') || '', q: params.get('q') || '', page: parseInt(params.get('page'), 10) || 1 };
-      document.getElementById('q').value = state.q;
+      const searchInput = document.getElementById('q');
+      const resetButton = document.getElementById('reset-filter');
+      searchInput.value = state.q;
+
+      function syncResetButton() {
+        resetButton.classList.toggle('hidden', !(state.kategori || state.q || searchInput.value.trim()));
+      }
+
+      syncResetButton();
 
       const kategori = await fetch('/api/kategori').then((r) => r.json()).catch(() => []);
       const chips = document.getElementById('chips');
       chips.innerHTML = ['', ...kategori].map((k) =>
-        `<button type="button" data-k="${esc(k)}" class="rounded-full px-4 py-2 text-sm font-semibold ${k === state.kategori ? 'bg-primary text-ink' : 'bg-white text-ink ring-1 ring-ink/15 hover:ring-primary'}">${esc(k || 'Semua')}</button>`
+        `<button type="button" data-k="${esc(k)}" aria-pressed="${k === state.kategori}" class="rounded-full px-4 py-2 text-sm font-semibold ${k === state.kategori ? 'bg-primary text-ink' : 'bg-white text-ink ring-1 ring-ink/15 hover:ring-primary'}">${esc(k || 'Semua')}</button>`
       ).join('');
       chips.addEventListener('click', (e) => {
         const b = e.target.closest('button'); if (!b) return;
         state.kategori = b.dataset.k; state.page = 1; go();
       });
+      searchInput.addEventListener('input', syncResetButton);
+      resetButton.addEventListener('click', () => {
+        state.kategori = '';
+        state.q = '';
+        state.page = 1;
+        searchInput.value = '';
+        syncResetButton();
+        go();
+      });
       document.getElementById('filter').addEventListener('submit', (e) => {
-        e.preventDefault(); state.q = document.getElementById('q').value.trim(); state.page = 1; go();
+        e.preventDefault(); state.q = searchInput.value.trim(); state.page = 1; go();
       });
       function go() {
         const p = new URLSearchParams();
         if (state.kategori) p.set('kategori', state.kategori);
         if (state.q) p.set('q', state.q);
         if (state.page > 1) p.set('page', state.page);
-        location.search = p.toString();
+        const query = p.toString();
+        if (query) location.href = location.pathname + '?' + query;
+        else if (location.search) location.href = location.pathname;
+        else history.replaceState(null, '', location.pathname);
       }
 
       const p = new URLSearchParams({ limit: 9, page: state.page });
