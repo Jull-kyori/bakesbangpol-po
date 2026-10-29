@@ -29,13 +29,16 @@ npm run css         # kompilasi sekali (minify), sebelum deploy
 ```
 server.js            Express: login admin + API berita + upload gambar
 data/berita.json     Isi berita (di-backup bersama public/uploads)
+data/komentar.json   Komentar, balasan, reaksi, dan laporan moderasi
 src/input.css        Warna (@theme), font, gaya hero
 public/
   index.html         Beranda: hero, akses cepat, profil, berita, bidang, struktur
   berita.html        Daftar berita (filter kategori, pencarian, halaman)
   berita-detail.html Detail satu berita
+  aspirasi.html      Panduan aspirasi dan kanal pengaduan resmi
+  kebijakan.html     Aturan komentar dan informasi privasi
   js/layout.js       Header + footer + data kontak (objek SITE) untuk semua halaman
-  admin/             Login dan dashboard admin
+  admin/             Login, dashboard berita, dan dashboard admin E-IDI
   assets/img/        Taruh logo.png, hero.jpg, kantor.jpg di sini
   uploads/           Gambar berita yang diunggah lewat admin
 ```
@@ -56,6 +59,10 @@ public/
 - Setelah HTTPS aktif, isi `COOKIE_SECURE=true` di `.env`.
 - Jika di belakang reverse proxy, tambahkan `app.set('trust proxy', 1);` di `server.js` agar pembatasan percobaan login membaca IP asli.
 - **Backup**: salin folder `data/` dan `public/uploads/` secara berkala.
+- Komentar publik tidak memerlukan akun. Komentar baru menunggu persetujuan admin sebelum tampil; admin dapat menyetujui, menolak, atau menghapus komentar beserta balasannya. Pengunjung dapat membalas komentar yang sudah tampil, memberi reaksi suka/tidak suka, melaporkan komentar, dan membagikan tautan berita. Komentar dibatasi 5 kiriman per IP tiap 10 menit.
+- Pengelolaan E-IDI berada terpisah di `/admin/idi.html` dan memerlukan sesi admin. Halaman publik `/idi.html` hanya menampilkan data, grafik, dan rekapitulasi.
+- Halaman Aspirasi menjelaskan kanal pengaduan eksternal yang resmi, tanpa menyimpan pengaduan langsung di situs. Halaman Kebijakan menjelaskan aturan komentar dan data yang digunakan.
+- Tombol aksesibilitas mengatur ukuran teks dan kontras; asisten informasi di pojok kanan menjawab panduan FAQ lokal tanpa API AI atau mengirim pertanyaan ke layanan pihak ketiga.
 
 ## Keamanan yang sudah ada
 

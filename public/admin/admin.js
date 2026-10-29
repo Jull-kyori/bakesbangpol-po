@@ -69,6 +69,95 @@
     $('#pager').innerHTML = h;
   }
 
+  async function loadModeration() {
+    const filter = $('#komentar-status-filter').value;
+    const [reports, comments] = await Promise.all([
+      api('/api/admin/laporan-komentar'),
+      api('/api/admin/komentar?status=' + encodeURIComponent(filter))
+    ]);
+    $('#laporan-list').innerHTML = reports.items.length ? reports.items.map((report) => `
+      <li class="rounded-xl bg-white p-4 ring-1 ring-ink/10">
+        <div class="flex flex-wrap justify-between gap-2">
+          <p class="font-semibold text-ink">${esc(report.alasan)} <span class="text-sm font-normal ${report.status === 'baru' ? 'text-red-700' : 'text-slate-500'}">(${report.status === 'baru' ? 'Baru' : 'Ditinjau'})</span></p>
+          <time class="text-xs text-slate-500">${esc(new Date(report.createdAt).toLocaleString('id-ID'))}</time>
+        </div>
+        <p class="mt-1 text-xs text-slate-500">${esc(report.judulBerita)}</p>
+        <p class="mt-2 text-sm"><strong>${esc(report.namaKomentar)}:</strong> ${esc(report.isiKomentar)}</p>
+        ${report.detail ? `<p class="mt-1 text-sm text-slate-600">Keterangan: ${esc(report.detail)}</p>` : ''}
+        <div class="mt-3 flex flex-wrap gap-2">
+          ${report.status === 'baru' ? `<button data-review-report="${esc(report.id)}" class="rounded-lg px-3 py-1.5 text-sm font-semibold text-primary-dark ring-1 ring-primary-dark/30 hover:bg-primary/15">Tandai ditinjau</button>` : ''}
+          <button data-delete-reported="${esc(report.commentId)}" class="rounded-lg px-3 py-1.5 text-sm font-semibold text-red-700 ring-1 ring-red-300 hover:bg-red-50">Hapus komentar</button>
+          <button data-clear-report="${esc(report.id)}" class="rounded-lg px-3 py-1.5 text-sm text-slate-600 ring-1 ring-ink/15 hover:bg-cream">Hapus laporan</button>
+        </div>
+      </li>`).join('') : '<li class="rounded-xl bg-white p-4 text-sm text-slate-500 ring-1 ring-ink/10">Belum ada laporan.</li>';
+    $('#komentar-admin-list').innerHTML = comments.items.length ? comments.items.map((comment) => `
+      <li class="rounded-xl bg-white p-4 ring-1 ring-ink/10">
+        <div class="flex flex-wrap justify-between gap-2">
+          <p class="font-semibold text-ink">${esc(comment.nama)}${comment.parentId ? ' <span class="text-xs font-normal text-slate-500">(balasan)</span>' : ''}</p>
+          <time class="text-xs text-slate-500">${esc(new Date(comment.createdAt).toLocaleString('id-ID'))}</time>
+        </div>
+        <p class="mt-1 text-xs text-slate-500">${esc(comment.judulBerita)}${comment.laporanBaru ? ` · <strong class="text-red-700">${comment.laporanBaru} laporan baru</strong>` : ''}</p>
+        <p class="mt-2 whitespace-pre-wrap break-words text-sm text-slate-700">${esc(comment.isi)}</p>
+        <p class="mt-2 text-xs font-semibold ${comment.status === 'pending' ? 'text-amber-700' : comment.status === 'approved' ? 'text-green-700' : 'text-red-700'}">Status: ${comment.status === 'pending' ? 'Menunggu persetujuan' : comment.status === 'approved' ? 'Ditampilkan' : 'Ditolak'}</p>
+        <div class="mt-3 flex flex-wrap gap-2">
+          ${comment.status !== 'approved' ? `<button data-moderate="${esc(comment.id)}" data-status="approved" class="rounded-lg px-3 py-1.5 text-sm font-semibold text-green-800 ring-1 ring-green-300 hover:bg-green-50">Setujui &amp; tampilkan</button>` : ''}
+          ${comment.status !== 'rejected' ? `<button data-moderate="${esc(comment.id)}" data-status="rejected" class="rounded-lg px-3 py-1.5 text-sm font-semibold text-red-700 ring-1 ring-red-300 hover:bg-red-50">Tolak</button>` : ''}
+          <button data-delete-comment="${esc(comment.id)}" class="rounded-lg px-3 py-1.5 text-sm font-semibold text-red-700 ring-1 ring-red-300 hover:bg-red-50">Hapus permanen</button>
+        </div>
+      </li>`).join('') : '<li class="rounded-xl bg-white p-4 text-sm text-slate-500 ring-1 ring-ink/10">Belum ada komentar.</li>';
+  }
+
+  async function moderateComment(id, status) {
+    if (status === 'rejected' && !confirm('Tolak komentar ini beserta semua balasannya?')) return;
+    await api('/api/admin/komentar/' + encodeURIComponent(id), {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status })
+    });
+    toast(status === 'approved' ? 'Komentar disetujui dan ditampilkan.' : 'Komentar beserta balasannya ditolak.', true);
+    await loadModeration();
+  }
+
+  async function deleteComment(id) {
+    if (!confirm('Hapus komentar ini beserta semua balasannya?')) return;
+    await api('/api/admin/komentar/' + encodeURIComponent(id), { method: 'DELETE' });
+    toast('Komentar dan balasannya dihapus.', true);
+    await loadModeration();
+  }
+
+  $('#laporan-list').addEventListener('click', async (e) => {
+    const review = e.target.closest('[data-review-report]');
+    const clear = e.target.closest('[data-clear-report]');
+    const remove = e.target.closest('[data-delete-reported]');
+    try {
+      if (review) {
+        await api('/api/admin/laporan-komentar/' + encodeURIComponent(review.dataset.reviewReport), { method: 'PATCH' });
+        toast('Laporan ditandai sudah ditinjau.', true);
+        await loadModeration();
+      } else if (clear) {
+        await api('/api/admin/laporan-komentar/' + encodeURIComponent(clear.dataset.clearReport), { method: 'DELETE' });
+        toast('Laporan dihapus.', true);
+        await loadModeration();
+      } else if (remove) {
+        await deleteComment(remove.dataset.deleteReported);
+      }
+    } catch (err) { toast(err.message, false); }
+  });
+
+  $('#komentar-admin-list').addEventListener('click', async (e) => {
+    const moderate = e.target.closest('[data-moderate]');
+    const remove = e.target.closest('[data-delete-comment]');
+    if (!moderate && !remove) return;
+    try {
+      if (moderate) await moderateComment(moderate.dataset.moderate, moderate.dataset.status);
+      else await deleteComment(remove.dataset.deleteComment);
+    }
+    catch (err) { toast(err.message, false); }
+  });
+  $('#komentar-status-filter').addEventListener('change', () => {
+    loadModeration().catch((err) => toast(err.message, false));
+  });
+
   $('#list').addEventListener('click', async (e) => {
     const ed = e.target.closest('[data-edit]');
     const del = e.target.closest('[data-del]');
@@ -138,6 +227,7 @@
       resetForm();
       await loadKategori();
       await loadList();
+      await loadModeration();
     } catch (e) { /* sudah dialihkan ke halaman login */ }
   })();
 })();

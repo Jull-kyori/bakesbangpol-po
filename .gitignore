@@ -1,4 +1,5 @@
 node_modules
 .env
+data/komentar.json
 public/uploads/*
 !public/uploads/.gitkeep

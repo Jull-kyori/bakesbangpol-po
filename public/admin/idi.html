@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex" />
+  <title>Kelola E-IDI | Admin Bakesbangpol Ponorogo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link rel="stylesheet" href="/css/output.css" />
+</head>
+<body class="min-h-screen bg-cream text-ink antialiased">
+  <header class="bg-ink text-white shadow">
+    <div class="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-4 py-4 sm:px-6">
+      <div>
+        <p class="text-xs font-semibold uppercase tracking-wider text-primary">Panel administrasi</p>
+        <h1 class="font-display text-xl font-bold">Kelola data E-IDI</h1>
+      </div>
+      <nav class="flex flex-wrap items-center gap-2 text-sm" aria-label="Navigasi admin">
+        <a href="/admin/" class="rounded-lg px-3 py-2 hover:bg-white/10">Dashboard berita</a>
+        <a href="/idi.html" class="rounded-lg px-3 py-2 hover:bg-white/10">Lihat halaman publik</a>
+        <button id="logout" type="button" class="rounded-lg bg-white/10 px-3 py-2 font-semibold hover:bg-white/20">Keluar</button>
+      </nav>
+    </div>
+  </header>
+
+  <div id="toast" class="fixed right-4 top-4 z-50 hidden max-w-sm rounded-lg px-4 py-3 text-sm font-semibold shadow-lg" role="status"></div>
+
+  <main class="mx-auto max-w-7xl space-y-8 px-4 py-8 sm:px-6 lg:px-8">
+    <section class="grid gap-4 sm:grid-cols-3" aria-label="Ringkasan data E-IDI">
+      <article class="rounded-xl border border-amber-200 bg-white p-5 shadow-sm">
+        <p class="text-sm font-semibold text-slate-500">Tahun data</p>
+        <p id="stat-tahun" class="mt-2 text-2xl font-bold text-ink">-</p>
+      </article>
+      <article class="rounded-xl border border-amber-200 bg-white p-5 shadow-sm">
+        <p class="text-sm font-semibold text-slate-500">Skor IDI total</p>
+        <p id="stat-skor" class="mt-2 text-2xl font-bold text-ink">-</p>
+      </article>
+      <article class="rounded-xl border border-amber-200 bg-white p-5 shadow-sm">
+        <p class="text-sm font-semibold text-slate-500">Jumlah indikator</p>
+        <p id="stat-jumlah" class="mt-2 text-2xl font-bold text-ink">-</p>
+      </article>
+    </section>
+
+    <section class="grid items-start gap-8 xl:grid-cols-[minmax(0,0.85fr)_minmax(0,1.4fr)]">
+      <form id="idiForm" class="space-y-5 rounded-2xl border border-amber-200 bg-white p-5 shadow-sm sm:p-7">
+        <div class="border-b border-amber-100 pb-4">
+          <p class="text-xs font-bold uppercase tracking-wider text-primary-dark">Pengelolaan indikator</p>
+          <h2 id="formJudul" class="mt-1 text-xl font-bold">Tambah indikator E-IDI</h2>
+          <p class="mt-1 text-sm text-slate-600">Perubahan akan langsung tampil di halaman E-IDI publik.</p>
+        </div>
+
+        <div>
+          <label for="formAspek" class="text-sm font-semibold text-ink">Aspek IDI <span aria-hidden="true">*</span></label>
+          <select id="formAspek" name="aspek" required class="mt-1 w-full rounded-lg border border-ink/20 bg-white px-3 py-2.5">
+            <option value="">Pilih aspek</option>
+            <option value="Kebebasan Sipil">Aspek I: Kebebasan Sipil</option>
+            <option value="Kesetaraan Politik">Aspek II: Kesetaraan Politik</option>
+            <option value="Lembaga Demokrasi">Aspek III: Kapasitas Lembaga Demokrasi</option>
+          </select>
+        </div>
+        <div>
+          <label for="formIndikator" class="text-sm font-semibold text-ink">Indikator / variabel <span aria-hidden="true">*</span></label>
+          <input id="formIndikator" name="indikator" required maxlength="200" placeholder="Contoh: Kebebasan Berpendapat" class="mt-1 w-full rounded-lg border border-ink/20 px-3 py-2.5" />
+        </div>
+        <div>
+          <label for="formSkor" class="text-sm font-semibold text-ink">Nilai skor (0–100) <span aria-hidden="true">*</span></label>
+          <input id="formSkor" name="skor" type="number" step="0.01" min="0" max="100" required placeholder="85.50" class="mt-1 w-full rounded-lg border border-ink/20 px-3 py-2.5" />
+        </div>
+        <div>
+          <label for="formCatatan" class="text-sm font-semibold text-ink">Catatan evaluasi dan dasar data</label>
+          <textarea id="formCatatan" name="catatan" rows="4" maxlength="1000" placeholder="Ringkasan temuan atau dasar hukum..." class="mt-1 w-full rounded-lg border border-ink/20 px-3 py-2.5"></textarea>
+        </div>
+        <div>
+          <label for="formDokumen" class="text-sm font-semibold text-ink">Dokumen bukti (PDF, PNG, JPG; maks. 5 MB)</label>
+          <input id="formDokumen" name="dokumen" type="file" accept="application/pdf,image/png,image/jpeg" class="mt-1 w-full rounded-lg border border-dashed border-ink/25 bg-cream p-3 text-sm" />
+          <p id="docHelp" class="mt-1 hidden text-xs text-slate-500">Kosongkan jika ingin mempertahankan dokumen yang saat ini tersimpan.</p>
+          <label id="hapusDokWrap" class="mt-2 hidden items-center gap-2 text-sm"><input type="checkbox" name="hapus_dokumen" /> Hapus dokumen yang saat ini tersimpan</label>
+        </div>
+        <div class="rounded-xl bg-amber-50 p-4">
+          <label for="termsCheck" class="flex items-start gap-3 text-sm leading-relaxed text-amber-950">
+            <input id="termsCheck" type="checkbox" required class="mt-1 h-4 w-4 shrink-0" />
+            <span>Saya memastikan data yang dimasukkan telah diverifikasi dan dapat dipertanggungjawabkan untuk publikasi.</span>
+          </label>
+        </div>
+        <div class="flex flex-wrap justify-end gap-3 border-t border-amber-100 pt-4">
+          <button id="btnBatal" type="button" class="hidden rounded-lg px-4 py-2.5 text-sm font-semibold text-slate-700 ring-1 ring-ink/20 hover:bg-cream">Batal edit</button>
+          <button id="btnReset" type="reset" class="rounded-lg px-4 py-2.5 text-sm font-semibold text-slate-700 ring-1 ring-ink/20 hover:bg-cream">Reset</button>
+          <button id="btnSimpan" class="rounded-lg bg-primary px-5 py-2.5 text-sm font-bold text-ink hover:bg-accent hover:text-white">
+            <i class="fa-solid fa-floppy-disk mr-1" aria-hidden="true"></i><span>Simpan indikator</span>
+          </button>
+        </div>
+      </form>
+
+      <section class="min-w-0 overflow-hidden rounded-2xl border border-amber-200 bg-white shadow-sm">
+        <div class="flex flex-col justify-between gap-4 border-b border-amber-100 bg-amber-50/60 p-5 sm:flex-row sm:items-center">
+          <div>
+            <h2 class="text-lg font-bold">Data indikator</h2>
+            <p class="text-sm text-slate-600">Cari, ubah, atau hapus data E-IDI.</p>
+          </div>
+          <div class="flex flex-col gap-2 sm:flex-row">
+            <label for="filterAspek" class="sr-only">Filter aspek</label>
+            <select id="filterAspek" class="rounded-lg border border-ink/20 bg-white px-3 py-2 text-sm">
+              <option value="all">Semua aspek</option>
+              <option value="Kebebasan Sipil">Kebebasan Sipil</option>
+              <option value="Kesetaraan Politik">Kesetaraan Politik</option>
+              <option value="Lembaga Demokrasi">Lembaga Demokrasi</option>
+            </select>
+            <label for="searchInput" class="sr-only">Cari indikator</label>
+            <input id="searchInput" type="search" placeholder="Cari indikator..." class="rounded-lg border border-ink/20 bg-white px-3 py-2 text-sm" />
+          </div>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full min-w-[760px] text-left text-sm">
+            <thead class="bg-amber-100/70 text-xs uppercase text-amber-950">
+              <tr>
+                <th scope="col" class="px-4 py-3">Aspek</th>
+                <th scope="col" class="px-4 py-3">Indikator</th>
+                <th scope="col" class="px-4 py-3 text-center">Skor</th>
+                <th scope="col" class="px-4 py-3">Dokumen</th>
+                <th scope="col" class="px-4 py-3 text-center">Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="indicatorTableBody" class="divide-y divide-amber-100"></tbody>
+          </table>
+        </div>
+        <p id="tabelKosong" class="hidden p-8 text-center text-sm text-slate-500">Belum ada indikator yang cocok.</p>
+      </section>
+    </section>
+  </main>
+
+  <script src="/admin/idi-admin.js"></script>
+</body>
+</html>

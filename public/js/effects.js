@@ -12,7 +12,7 @@
   const toTop = document.createElement('button');
   toTop.type = 'button';
   toTop.setAttribute('aria-label', 'Kembali ke atas');
-  toTop.className = 'fixed bottom-6 left-6 z-40 hidden h-11 w-11 items-center justify-center rounded-full bg-ink text-white shadow-lg ring-1 ring-white/20 transition hover:bg-accent';
+  toTop.className = 'fixed bottom-24 left-4 z-40 hidden h-11 w-11 items-center justify-center rounded-full bg-ink text-white shadow-lg ring-1 ring-white/20 transition hover:bg-accent';
   toTop.innerHTML = '<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>';
   toTop.addEventListener('click', () => window.scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' }));
   document.body.append(bar, toTop);

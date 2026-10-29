@@ -10,7 +10,7 @@
 <body class="flex min-h-screen items-center justify-center bg-cream px-6 text-slate-800 antialiased">
   <main class="w-full max-w-sm rounded-xl bg-white p-8 ring-1 ring-ink/10">
     <h1 class="text-2xl font-bold text-ink">Masuk admin</h1>
-    <p class="mt-1 text-sm text-slate-600">Khusus pengelola berita Bakesbangpol.</p>
+    <p class="mt-1 text-sm text-slate-600">Khusus pengelola berita dan data E-IDI Bakesbangpol.</p>
     <form id="form" class="mt-6 space-y-4">
       <div>
         <label for="password" class="text-sm font-semibold text-ink">Password</label>
@@ -33,7 +33,8 @@
         });
         const d = await r.json();
         if (!r.ok) throw new Error(d.error || 'Gagal masuk.');
-        location.href = '/admin/';
+        const next = new URLSearchParams(location.search).get('next');
+        location.href = next === '/admin/idi.html' ? next : '/admin/';
       } catch (ex) {
         err.textContent = ex.message;
         err.classList.remove('hidden');

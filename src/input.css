@@ -57,3 +57,27 @@ html { scroll-padding-top: 5rem; } /* anchor tidak tertutup menu yang menempel *
 
 /* Batang skor yang terisi perlahan */
 .fill-bar { width: 0; transition: width 1.2s cubic-bezier(.2, .7, .2, 1); }
+
+html.a11y-large-text { font-size: 112.5%; }
+html.a11y-larger-text { font-size: 125%; }
+html.a11y-small-text { font-size: 87.5%; }
+html.a11y-contrast {
+  --color-primary: #ffd500;
+  --color-primary-dark: #713000;
+  --color-accent: #a52d00;
+  --color-ink: #000;
+  --color-cream: #fff;
+}
+html.a11y-links a:not([class*="no-underline"]) {
+  text-decoration: underline !important;
+  text-decoration-thickness: 2px !important;
+  text-underline-offset: .18em;
+}
+
+@media (max-width: 639px) {
+  #aksesibilitas-toggle,
+  #asisten-toggle { width: 3rem; height: 3rem; }
+  #aksesibilitas-panel,
+  #asisten-panel { bottom: 3.75rem; max-height: calc(100dvh - 6rem); overflow-y: auto; }
+  #aksesibilitas-panel { width: min(18rem, calc(100vw - 2rem)); }
+}

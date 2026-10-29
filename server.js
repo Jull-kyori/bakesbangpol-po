@@ -20,6 +20,7 @@ const SESSION_MS = 8 * 60 * 60 * 1000; // 8 jam
 const PUBLIC_DIR = path.join(__dirname, 'public');
 const UPLOAD_DIR = path.join(PUBLIC_DIR, 'uploads');
 const DATA_FILE = path.join(__dirname, 'data', 'berita.json');
+const COMMENTS_FILE = path.join(__dirname, 'data', 'komentar.json');
 const MAX_GALERI = 10;
 
 if (!process.env.ADMIN_PASSWORD) {
@@ -50,6 +51,65 @@ function removeUpload(gambar) {
   if (typeof gambar === 'string' && gambar.startsWith('/uploads/')) {
     fs.unlink(path.join(UPLOAD_DIR, path.basename(gambar)), () => {});
   }
+}
+
+// --- Komentar, reaksi, dan laporan ---
+function readComments() {
+  try {
+    const data = JSON.parse(fs.readFileSync(COMMENTS_FILE, 'utf8'));
+    return {
+      comments: Array.isArray(data.comments) ? data.comments : [],
+      reactions: Array.isArray(data.reactions) ? data.reactions : [],
+      reports: Array.isArray(data.reports) ? data.reports : []
+    };
+  } catch {
+    return { comments: [], reactions: [], reports: [] };
+  }
+}
+function writeComments(data) {
+  const tmp = COMMENTS_FILE + '.tmp';
+  fs.writeFileSync(tmp, JSON.stringify(data, null, 2));
+  fs.renameSync(tmp, COMMENTS_FILE);
+}
+function visitorKey(req, res) {
+  let token = getCookie(req, 'visitor');
+  if (!/^[a-f0-9]{64}$/.test(token || '')) {
+    token = crypto.randomBytes(32).toString('hex');
+    let value = `visitor=${token}; HttpOnly; SameSite=Lax; Path=/; Max-Age=31536000`;
+    if (process.env.COOKIE_SECURE === 'true') value += '; Secure';
+    res.append('Set-Cookie', value);
+  }
+  return crypto.createHash('sha256').update(token).digest('hex');
+}
+function consumeLimit(limits, key, max, windowMs) {
+  const now = Date.now();
+  let entry = limits.get(key);
+  if (!entry || entry.resetAt <= now) {
+    entry = { count: 0, resetAt: now + windowMs };
+    limits.set(key, entry);
+  }
+  if (entry.count >= max) return false;
+  entry.count++;
+  return true;
+}
+const commentLimits = new Map();
+const reportLimits = new Map();
+const reactionLimits = new Map();
+function findComment(data, id) {
+  return data.comments.find((item) => item.id === id && !item.deletedAt);
+}
+function isPublishedComment(data, item) {
+  const seen = new Set();
+  let current = item;
+  while (current) {
+    if (current.deletedAt || current.status === 'pending' || current.status === 'rejected' || seen.has(current.id)) {
+      return false;
+    }
+    seen.add(current.id);
+    if (!current.parentId) return true;
+    current = findComment(data, current.parentId);
+  }
+  return false;
 }
 
 // --- Sesi & login ---
@@ -172,6 +232,11 @@ app.post('/api/logout', (req, res) => {
 });
 app.get('/api/admin/me', requireAdmin, (req, res) => res.json({ ok: true }));
 
+app.get('/admin/idi.html', (req, res) => {
+  if (!isAdmin(req)) return res.redirect('/admin/login.html?next=%2Fadmin%2Fidi.html');
+  res.sendFile(path.join(PUBLIC_DIR, 'admin', 'idi.html'));
+});
+
 // Publik: daftar & detail berita
 app.get('/api/kategori', (req, res) => res.json(KATEGORI));
 
@@ -192,6 +257,251 @@ app.get('/api/berita/:id', (req, res) => {
   const b = readDb().find((x) => x.id === req.params.id);
   if (!b) return res.status(404).json({ error: 'Berita tidak ditemukan.' });
   res.json(b);
+});
+
+app.get('/api/berita/:id/komentar', (req, res) => {
+  const newsId = req.params.id;
+  if (!readDb().some((item) => item.id === newsId)) {
+    return res.status(404).json({ error: 'Berita tidak ditemukan.' });
+  }
+  const visitor = visitorKey(req, res);
+  const data = readComments();
+  const comments = data.comments
+    .filter((item) => item.beritaId === newsId && isPublishedComment(data, item))
+    .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+    .map((item) => {
+      const reactions = data.reactions.filter((reaction) => reaction.commentId === item.id);
+      const mine = reactions.find((reaction) => reaction.visitor === visitor);
+      return {
+        id: item.id, parentId: item.parentId, nama: item.nama, isi: item.isi,
+        createdAt: item.createdAt,
+        suka: reactions.filter((reaction) => reaction.value === 'suka').length,
+        tidakSuka: reactions.filter((reaction) => reaction.value === 'tidak-suka').length,
+        reaksiSaya: mine ? mine.value : ''
+      };
+    });
+  res.json({ items: comments, total: comments.length });
+});
+
+app.post('/api/berita/:id/komentar', (req, res) => {
+  const newsId = req.params.id;
+  if (!readDb().some((item) => item.id === newsId)) {
+    return res.status(404).json({ error: 'Berita tidak ditemukan.' });
+  }
+  if (!consumeLimit(commentLimits, req.ip, 5, 10 * 60 * 1000)) {
+    return res.status(429).json({ error: 'Terlalu banyak komentar. Silakan coba lagi nanti.' });
+  }
+  const nama = String((req.body && req.body.nama) || '').trim();
+  const isi = String((req.body && req.body.isi) || '').trim();
+  const parentId = String((req.body && req.body.parentId) || '').trim();
+  if (nama.length < 2 || nama.length > 60) {
+    return res.status(400).json({ error: 'Nama harus terdiri dari 2 sampai 60 karakter.' });
+  }
+  if (isi.length < 2 || isi.length > 1000) {
+    return res.status(400).json({ error: 'Komentar harus terdiri dari 2 sampai 1.000 karakter.' });
+  }
+  const data = readComments();
+  if (parentId) {
+    let parent = findComment(data, parentId);
+    if (!parent || parent.beritaId !== newsId || !isPublishedComment(data, parent)) {
+      return res.status(400).json({ error: 'Komentar yang dibalas tidak ditemukan.' });
+    }
+    let depth = 1;
+    while (parent.parentId) {
+      depth++;
+      parent = findComment(data, parent.parentId);
+      if (!parent || depth > 4) {
+        return res.status(400).json({ error: 'Rangkaian balasan tidak valid.' });
+      }
+    }
+    if (depth >= 4) {
+      return res.status(400).json({ error: 'Balasan sudah mencapai batas kedalaman.' });
+    }
+  }
+  const item = {
+    id: crypto.randomBytes(12).toString('hex'), beritaId: newsId,
+    parentId: parentId || null, nama, isi, status: 'pending', createdAt: new Date().toISOString()
+  };
+  data.comments.push(item);
+  writeComments(data);
+  res.status(201).json({ ok: true, id: item.id });
+});
+
+app.post('/api/komentar/:id/reaksi', (req, res) => {
+  const data = readComments();
+  const item = findComment(data, req.params.id);
+  if (!item || !isPublishedComment(data, item) || !readDb().some((news) => news.id === item.beritaId)) {
+    return res.status(404).json({ error: 'Komentar tidak ditemukan.' });
+  }
+  const value = String((req.body && req.body.reaksi) || '');
+  if (!['suka', 'tidak-suka'].includes(value)) {
+    return res.status(400).json({ error: 'Reaksi tidak valid.' });
+  }
+  if (!consumeLimit(reactionLimits, req.ip, 60, 10 * 60 * 1000)) {
+    return res.status(429).json({ error: 'Terlalu banyak reaksi. Silakan coba lagi nanti.' });
+  }
+  const visitor = visitorKey(req, res);
+  const index = data.reactions.findIndex((reaction) =>
+    reaction.commentId === item.id && reaction.visitor === visitor);
+  if (index >= 0 && data.reactions[index].value === value) {
+    data.reactions.splice(index, 1);
+  } else if (index >= 0) {
+    data.reactions[index].value = value;
+  } else {
+    data.reactions.push({ commentId: item.id, visitor, value });
+  }
+  writeComments(data);
+  res.json({ ok: true });
+});
+
+app.post('/api/komentar/:id/laporan', (req, res) => {
+  const data = readComments();
+  const item = findComment(data, req.params.id);
+  if (!item || !isPublishedComment(data, item) || !readDb().some((news) => news.id === item.beritaId)) {
+    return res.status(404).json({ error: 'Komentar tidak ditemukan.' });
+  }
+  if (!consumeLimit(reportLimits, req.ip, 10, 10 * 60 * 1000)) {
+    return res.status(429).json({ error: 'Terlalu banyak laporan. Silakan coba lagi nanti.' });
+  }
+  const reason = String((req.body && req.body.alasan) || '');
+  const detail = String((req.body && req.body.detail) || '').trim();
+  if (!['Spam', 'Tidak pantas', 'Informasi keliru', 'Lainnya'].includes(reason)) {
+    return res.status(400).json({ error: 'Pilih alasan laporan yang tersedia.' });
+  }
+  if (detail.length > 300) {
+    return res.status(400).json({ error: 'Keterangan laporan maksimal 300 karakter.' });
+  }
+  const visitor = visitorKey(req, res);
+  if (data.reports.some((report) =>
+    report.commentId === item.id && report.visitor === visitor)) {
+    return res.status(409).json({ error: 'Anda sudah melaporkan komentar ini.' });
+  }
+  data.reports.push({
+    id: crypto.randomBytes(12).toString('hex'), commentId: item.id,
+    beritaId: item.beritaId, visitor, alasan: reason, detail,
+    status: 'baru', createdAt: new Date().toISOString()
+  });
+  writeComments(data);
+  res.status(201).json({ ok: true });
+});
+
+app.get('/api/admin/komentar', requireAdmin, (req, res) => {
+  const news = new Map(readDb().map((item) => [item.id, item.judul]));
+  const data = readComments();
+  const status = String(req.query.status || 'pending');
+  if (!['all', 'pending', 'approved', 'rejected'].includes(status)) {
+    return res.status(400).json({ error: 'Filter status komentar tidak valid.' });
+  }
+  const reportsByComment = new Map();
+  data.reports.filter((report) => report.status === 'baru').forEach((report) => {
+    reportsByComment.set(report.commentId, (reportsByComment.get(report.commentId) || 0) + 1);
+  });
+  const items = data.comments.filter((item) => !item.deletedAt).map((item) => ({
+    id: item.id, beritaId: item.beritaId, judulBerita: news.get(item.beritaId) || 'Berita dihapus',
+    parentId: item.parentId, nama: item.nama, isi: item.isi, createdAt: item.createdAt,
+    status: item.status || 'approved',
+    laporanBaru: reportsByComment.get(item.id) || 0
+  })).filter((item) => status === 'all' || item.status === status)
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  res.json({ items });
+});
+
+app.patch('/api/admin/komentar/:id', requireAdmin, (req, res) => {
+  const data = readComments();
+  const item = findComment(data, req.params.id);
+  if (!item) return res.status(404).json({ error: 'Komentar tidak ditemukan.' });
+  const status = String((req.body && req.body.status) || '');
+  if (!['approved', 'rejected'].includes(status)) {
+    return res.status(400).json({ error: 'Status moderasi tidak valid.' });
+  }
+  if (status === 'approved' && item.parentId) {
+    const parent = findComment(data, item.parentId);
+    if (!parent || !isPublishedComment(data, parent)) {
+      return res.status(409).json({ error: 'Setujui komentar induk sebelum menyetujui balasannya.' });
+    }
+  }
+  const ids = new Set([item.id]);
+  if (status === 'rejected') {
+    let changed = true;
+    while (changed) {
+      changed = false;
+      data.comments.forEach((comment) => {
+        if (comment.parentId && ids.has(comment.parentId) && !ids.has(comment.id)) {
+          ids.add(comment.id);
+          changed = true;
+        }
+      });
+    }
+  }
+  const reviewedAt = new Date().toISOString();
+  data.comments.forEach((comment) => {
+    if (ids.has(comment.id)) {
+      comment.status = status;
+      comment.reviewedAt = reviewedAt;
+    }
+  });
+  writeComments(data);
+  res.json({ ok: true, affected: ids.size });
+});
+
+app.get('/api/admin/laporan-komentar', requireAdmin, (req, res) => {
+  const news = new Map(readDb().map((item) => [item.id, item.judul]));
+  const data = readComments();
+  const comments = new Map(data.comments.map((item) => [item.id, item]));
+  const items = data.reports.map((report) => {
+    const comment = comments.get(report.commentId);
+    return {
+      ...report, judulBerita: news.get(report.beritaId) || 'Berita dihapus',
+      namaKomentar: comment ? comment.nama : '[Komentar tidak tersedia]',
+      isiKomentar: comment ? comment.isi : ''
+    };
+  }).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  res.json({ items });
+});
+
+app.patch('/api/admin/laporan-komentar/:id', requireAdmin, (req, res) => {
+  const data = readComments();
+  const report = data.reports.find((item) => item.id === req.params.id);
+  if (!report) return res.status(404).json({ error: 'Laporan tidak ditemukan.' });
+  report.status = 'ditinjau';
+  report.reviewedAt = new Date().toISOString();
+  writeComments(data);
+  res.json({ ok: true });
+});
+
+app.delete('/api/admin/laporan-komentar/:id', requireAdmin, (req, res) => {
+  const data = readComments();
+  const reports = data.reports.filter((item) => item.id !== req.params.id);
+  if (reports.length === data.reports.length) {
+    return res.status(404).json({ error: 'Laporan tidak ditemukan.' });
+  }
+  data.reports = reports;
+  writeComments(data);
+  res.json({ ok: true });
+});
+
+app.delete('/api/admin/komentar/:id', requireAdmin, (req, res) => {
+  const data = readComments();
+  const target = findComment(data, req.params.id);
+  if (!target) return res.status(404).json({ error: 'Komentar tidak ditemukan.' });
+  const deletedAt = new Date().toISOString();
+  const ids = new Set([target.id]);
+  let changed = true;
+  while (changed) {
+    changed = false;
+    data.comments.forEach((item) => {
+      if (item.parentId && ids.has(item.parentId) && !ids.has(item.id)) {
+        ids.add(item.id);
+        changed = true;
+      }
+    });
+  }
+  data.comments.forEach((item) => {
+    if (ids.has(item.id)) item.deletedAt = deletedAt;
+  });
+  data.reactions = data.reactions.filter((reaction) => !ids.has(reaction.commentId));
+  writeComments(data);
+  res.json({ ok: true, deleted: ids.size });
 });
 
 // Admin: tambah, ubah, hapus
@@ -255,6 +565,13 @@ app.delete('/api/berita/:id', requireAdmin, (req, res) => {
   removeUpload(b.gambar);
   (b.galeri || []).forEach((p) => removeUpload(p));
   writeDb(items.filter((x) => x.id !== req.params.id));
+  const comments = readComments();
+  const commentIds = new Set(comments.comments
+    .filter((item) => item.beritaId === req.params.id).map((item) => item.id));
+  comments.comments = comments.comments.filter((item) => item.beritaId !== req.params.id);
+  comments.reactions = comments.reactions.filter((item) => !commentIds.has(item.commentId));
+  comments.reports = comments.reports.filter((item) => item.beritaId !== req.params.id);
+  writeComments(comments);
   res.json({ ok: true });
 });
 

@@ -12,7 +12,8 @@
     <div class="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
       <p class="font-display text-lg font-bold">Dashboard berita</p>
       <div class="flex items-center gap-4 text-sm">
-        <a href="/idi.html" class="hover:text-primary">Kelola data IDI</a>
+        <a href="#moderasi" class="hover:text-primary">Komentar &amp; laporan</a>
+        <a href="/admin/idi.html" class="hover:text-primary">Kelola data E-IDI</a>
         <a href="/" target="_blank" class="hover:text-primary">Lihat website</a>
         <button id="logout" type="button" class="rounded-lg bg-white/10 px-3 py-1.5 font-semibold hover:bg-white/20">Keluar</button>
       </div>
@@ -81,6 +82,27 @@
       <div id="pager" class="mt-6 flex flex-wrap gap-2"></div>
     </section>
   </main>
+
+  <section id="moderasi" class="mx-auto max-w-6xl px-6 pb-12">
+    <h2 class="text-2xl font-bold text-ink">Moderasi komentar</h2>
+    <div class="mt-5 grid gap-8 lg:grid-cols-2">
+      <div>
+        <h3 class="text-lg font-bold text-ink">Laporan pengunjung</h3>
+        <ul id="laporan-list" class="mt-3 space-y-3"></ul>
+      </div>
+      <div>
+        <h3 class="text-lg font-bold text-ink">Komentar terbaru</h3>
+        <label for="komentar-status-filter" class="mt-2 block text-sm font-semibold text-slate-600">Filter moderasi</label>
+        <select id="komentar-status-filter" class="mt-1 w-full rounded-lg border border-ink/20 bg-white px-3 py-2 text-sm sm:max-w-xs">
+          <option value="pending">Menunggu persetujuan</option>
+          <option value="approved">Sudah ditampilkan</option>
+          <option value="rejected">Ditolak</option>
+          <option value="all">Semua status</option>
+        </select>
+        <ul id="komentar-admin-list" class="mt-3 space-y-3"></ul>
+      </div>
+    </div>
+  </section>
 
   <script src="/admin/admin.js"></script>
 </body>
