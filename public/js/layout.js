@@ -254,7 +254,7 @@
       </button>
       <section id="asisten-panel" aria-label="Asisten informasi Bakesbangpol" class="absolute bottom-16 right-0 hidden w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-2xl bg-white text-ink shadow-2xl ring-1 ring-ink/15">
         <div class="flex items-center justify-between bg-ink px-4 py-3 text-white">
-          <div><h2 class="font-display font-bold">Asisten Bakesbangpol</h2><p class="text-xs text-white/75">AI berbasis informasi situs</p></div>
+          <div><h2 class="font-display font-bold">Asisten AI Bakesbangpol</h2><p class="text-xs text-white/75">Informasi situs dan pertanyaan umum</p></div>
           <button id="asisten-close" type="button" aria-label="Tutup asisten" class="rounded-lg px-2 py-1 text-white/80 hover:bg-white/10">Tutup</button>
         </div>
         <p class="border-b border-ink/10 bg-cream px-4 py-2 text-xs leading-relaxed text-slate-600">Pertanyaan dan konteks chat dikirim ke layanan AI Groq. Situs tidak menyimpan riwayat. Jangan kirim data pribadi atau rahasia; jawaban AI dapat keliru.</p>
