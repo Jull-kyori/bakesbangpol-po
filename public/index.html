@@ -75,7 +75,7 @@
   <!-- PROFIL -->
   <section id="profil" class="mx-auto max-w-7xl px-6 py-20">
     <div class="grid items-center gap-10 md:grid-cols-2">
-      <img src="/assets/img/kantor.jpg" alt="Kantor Bakesbangpol Kabupaten Ponorogo" class="h-80 w-full rounded-xl bg-primary/20 object-cover" onerror="this.removeAttribute('src')" />
+      <img src="/assets/img/kantor.jpg" alt="Kantor Bakesbangpol Kabupaten Ponorogo" loading="lazy" decoding="async" class="h-80 w-full rounded-xl bg-primary/20 object-cover" onerror="this.removeAttribute('src')" />
       <div>
         <h2 class="text-3xl font-bold text-ink md:text-4xl">Tentang Bakesbangpol</h2>
         <p class="mt-5 max-w-prose leading-relaxed text-slate-700">Badan Kesatuan Bangsa dan Politik (Bakesbangpol) Kabupaten Ponorogo adalah perangkat daerah yang menyelenggarakan urusan pemerintahan bidang kesatuan bangsa dan politik. Struktur organisasinya berdasarkan Peraturan Bupati Ponorogo Nomor 12 Tahun 2023, terdiri dari Sekretariat dan tiga bidang.</p>
@@ -313,7 +313,7 @@
 
         const { esc } = window.BK;
         wrap.innerHTML = slides.map((b, i) =>
-          `<img src="${esc(b.gambar)}" alt="" class="absolute inset-0 h-full w-full object-cover transition-opacity duration-1000 ${i === 0 ? 'opacity-100' : 'opacity-0'}">`
+          `<img ${i === 0 ? `src="${esc(b.gambar)}" fetchpriority="high"` : `data-src="${esc(b.gambar)}"`} alt="" decoding="async" class="absolute inset-0 h-full w-full object-cover transition-opacity duration-1000 ${i === 0 ? 'opacity-100' : 'opacity-0'}">`
         ).join('');
         const imgs = wrap.querySelectorAll('img');
         const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -328,6 +328,10 @@
         function go(i) {
           const previous = cur;
           cur = i;
+          if (!imgs[cur].src && imgs[cur].dataset.src) {
+            imgs[cur].src = imgs[cur].dataset.src;
+            delete imgs[cur].dataset.src;
+          }
           imgs[previous].classList.replace('opacity-100', 'opacity-0');
           imgs[cur].classList.replace('opacity-0', 'opacity-100');
           const slide = slides[cur];

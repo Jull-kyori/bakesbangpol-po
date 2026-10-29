@@ -9,23 +9,27 @@
 </head>
 <body class="bg-cream text-slate-800 antialiased">
   <header class="bg-ink text-white">
-    <div class="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-      <p class="font-display text-lg font-bold">Dashboard berita</p>
-      <div class="flex items-center gap-4 text-sm">
-        <a href="#moderasi" class="hover:text-primary">Komentar &amp; laporan</a>
-        <a href="/admin/idi.html" class="hover:text-primary">Kelola data E-IDI</a>
-        <a href="/" target="_blank" class="hover:text-primary">Lihat website</a>
-        <button id="logout" type="button" class="rounded-lg bg-white/10 px-3 py-1.5 font-semibold hover:bg-white/20">Keluar</button>
+    <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-6 py-4">
+      <div>
+        <p class="text-xs font-semibold uppercase tracking-wider text-primary">Panel administrasi</p>
+        <h1 class="font-display text-lg font-bold">Berita &amp; komentar</h1>
       </div>
+    <nav aria-label="Navigasi admin" class="flex flex-wrap items-center justify-end gap-3 text-xs sm:gap-4 sm:text-sm">
+      <a href="/admin/" aria-current="page" class="hover:text-primary">Berita &amp; komentar</a>
+      <a href="/admin/idi.html" class="hover:text-primary">Data E-IDI</a>
+      <a href="/admin/#pengaturan" class="hover:text-primary">Pengaturan situs</a>
+      <a href="/" target="_blank" rel="noopener noreferrer" class="hover:text-primary">Lihat website</a>
+      <button id="logout" type="button" class="rounded-lg bg-white/10 px-3 py-1.5 font-semibold hover:bg-white/20">Keluar</button>
+    </nav>
     </div>
   </header>
 
-  <div id="toast" class="fixed right-4 top-4 z-50 hidden max-w-sm rounded-lg px-4 py-3 text-sm font-semibold shadow-lg" role="status"></div>
+  <div id="toast" class="fixed right-4 top-4 z-50 hidden max-w-sm rounded-lg px-4 py-3 text-sm font-semibold shadow-lg" role="status" data-motion="enter"></div>
 
   <main class="mx-auto grid max-w-6xl gap-8 px-6 py-10 lg:grid-cols-5">
 
     <!-- Form -->
-    <section class="lg:col-span-2">
+    <section class="lg:col-span-2" data-reveal>
       <form id="form" class="rounded-xl bg-white p-6 ring-1 ring-ink/10">
         <h2 id="form-title" class="text-xl font-bold text-ink">Tulis berita baru</h2>
 
@@ -76,14 +80,83 @@
     </section>
 
     <!-- Daftar -->
-    <section class="lg:col-span-3">
+    <section class="lg:col-span-3" data-reveal>
       <h2 class="text-xl font-bold text-ink">Berita yang sudah terbit <span id="total" class="text-base font-normal text-slate-500"></span></h2>
       <ul id="list" class="mt-5 space-y-3"></ul>
       <div id="pager" class="mt-6 flex flex-wrap gap-2"></div>
     </section>
   </main>
 
-  <section id="moderasi" class="mx-auto max-w-6xl px-6 pb-12">
+  <section id="pengaturan" class="mx-auto max-w-6xl px-6 pb-12">
+    <div class="rounded-xl bg-white p-6 ring-1 ring-ink/10 sm:p-8" data-reveal>
+      <div class="mb-6">
+        <h2 class="text-2xl font-bold text-ink">Pengaturan situs</h2>
+        <p class="mt-1 text-sm text-slate-600">Perbarui informasi yang tampil di website. Perubahan disimpan di server dan langsung berlaku.</p>
+      </div>
+      <form id="site-settings-form" class="space-y-6">
+        <fieldset class="grid gap-4 md:grid-cols-2">
+          <legend class="mb-3 text-lg font-bold text-ink">Identitas dan kontak</legend>
+          <div>
+            <label for="setting-brand" class="text-sm font-semibold">Nama singkat di menu</label>
+            <input id="setting-brand" name="brandName" required maxlength="80" class="mt-1 w-full rounded-lg border border-ink/20 px-3 py-2" />
+          </div>
+          <div>
+            <label for="setting-district" class="text-sm font-semibold">Nama kabupaten/kota</label>
+            <input id="setting-district" name="district" required maxlength="80" class="mt-1 w-full rounded-lg border border-ink/20 px-3 py-2" />
+          </div>
+          <div class="md:col-span-2">
+            <label for="setting-organization" class="text-sm font-semibold">Nama lengkap instansi</label>
+            <input id="setting-organization" name="organizationName" required maxlength="120" class="mt-1 w-full rounded-lg border border-ink/20 px-3 py-2" />
+          </div>
+          <div class="md:col-span-2">
+            <label for="setting-address" class="text-sm font-semibold">Alamat</label>
+            <input id="setting-address" name="address" maxlength="240" class="mt-1 w-full rounded-lg border border-ink/20 px-3 py-2" />
+          </div>
+          <div>
+            <label for="setting-phone" class="text-sm font-semibold">Telepon</label>
+            <input id="setting-phone" name="phone" type="tel" maxlength="40" class="mt-1 w-full rounded-lg border border-ink/20 px-3 py-2" />
+          </div>
+          <div>
+            <label for="setting-email" class="text-sm font-semibold">Email</label>
+            <input id="setting-email" name="email" type="email" maxlength="120" class="mt-1 w-full rounded-lg border border-ink/20 px-3 py-2" />
+          </div>
+          <div class="md:col-span-2">
+            <label for="setting-hours" class="text-sm font-semibold">Jam layanan</label>
+            <input id="setting-hours" name="serviceHours" maxlength="120" class="mt-1 w-full rounded-lg border border-ink/20 px-3 py-2" />
+          </div>
+        </fieldset>
+
+        <fieldset class="space-y-3 border-t border-ink/10 pt-5">
+          <legend class="text-lg font-bold text-ink">Pengumuman di website</legend>
+          <label class="flex items-center gap-3 text-sm font-semibold">
+            <input id="setting-announcement-enabled" name="announcementEnabled" type="checkbox" class="h-4 w-4" />
+            Tampilkan banner pengumuman
+          </label>
+          <div>
+            <label for="setting-announcement" class="text-sm font-semibold">Isi pengumuman (maksimal 300 karakter)</label>
+            <textarea id="setting-announcement" name="announcement" rows="3" maxlength="300" class="mt-1 w-full rounded-lg border border-ink/20 px-3 py-2"></textarea>
+          </div>
+        </fieldset>
+
+        <fieldset class="space-y-3 border-t border-ink/10 pt-5">
+          <legend class="text-lg font-bold text-ink">Asisten AI</legend>
+          <label class="flex items-center gap-3 text-sm font-semibold">
+            <input id="setting-assistant-enabled" name="assistantEnabled" type="checkbox" class="h-4 w-4" />
+            Tampilkan dan izinkan asisten AI
+          </label>
+          <p id="setting-ai-status" class="text-sm text-slate-600" role="status"></p>
+          <p class="text-sm text-slate-500">Kunci API tidak dapat dilihat atau diubah di dashboard. Pengelola server mengaturnya dengan aman melalui GROQ_API_KEY.</p>
+        </fieldset>
+
+        <div class="flex flex-wrap items-center gap-3 border-t border-ink/10 pt-5">
+          <button id="save-site-settings" type="submit" class="rounded-lg bg-primary px-5 py-2.5 font-semibold text-ink hover:bg-accent hover:text-white">Simpan pengaturan</button>
+          <span id="site-settings-feedback" class="text-sm" role="status" aria-live="polite"></span>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <section id="moderasi" class="mx-auto max-w-6xl px-6 pb-12" data-reveal>
     <h2 class="text-2xl font-bold text-ink">Moderasi komentar</h2>
     <div class="mt-5 grid gap-8 lg:grid-cols-2">
       <div>
@@ -104,6 +177,7 @@
     </div>
   </section>
 
+  <script src="/js/effects.js"></script>
   <script src="/admin/admin.js"></script>
 </body>
 </html>

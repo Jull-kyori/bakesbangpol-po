@@ -55,7 +55,8 @@
     ).sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)));
 
     $('#tabelKosong').classList.toggle('hidden', rows.length > 0);
-    $('#indicatorTableBody').innerHTML = rows.map((item) => {
+    const tableBody = $('#indicatorTableBody');
+    tableBody.innerHTML = rows.map((item) => {
       const scoreCategory = kategori(item.skor);
       const documentLink = item.dokumen
         ? `<a href="${esc(item.dokumen)}" target="_blank" rel="noopener noreferrer" class="font-semibold text-primary-dark underline">${esc(item.dokumenNama || 'Lihat dokumen')}</a>`
@@ -71,6 +72,7 @@
         </td>
       </tr>`;
     }).join('');
+    if (window.FX) window.FX.reveal(tableBody.children);
   }
 
   function resetForm() {
@@ -97,7 +99,9 @@
     $('#btnBatal').classList.remove('hidden');
     $('#hapusDokWrap').classList.toggle('hidden', !item.dokumen);
     $('#docHelp').classList.toggle('hidden', !item.dokumen);
-    form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    form.removeAttribute('data-motion');
+    requestAnimationFrame(() => form.setAttribute('data-motion', 'enter'));
+    form.scrollIntoView({ behavior: window.FX && window.FX.reduce ? 'auto' : 'smooth', block: 'start' });
     $('#formAspek').focus({ preventScroll: true });
   }
 
@@ -121,7 +125,10 @@
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
     const button = $('#btnSimpan');
+    const buttonLabel = button.querySelector('span');
     button.disabled = true;
+    button.setAttribute('aria-busy', 'true');
+    buttonLabel.textContent = 'Menyimpan...';
     try {
       const endpoint = editingId
         ? '/api/idi/indikator/' + encodeURIComponent(editingId)
@@ -137,6 +144,8 @@
       toast(error.message, false);
     } finally {
       button.disabled = false;
+      button.removeAttribute('aria-busy');
+      buttonLabel.textContent = editingId ? 'Simpan perubahan' : 'Simpan indikator';
     }
   });
 

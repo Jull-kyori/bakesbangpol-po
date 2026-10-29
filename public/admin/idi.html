@@ -7,7 +7,7 @@
   <title>Kelola E-IDI | Admin Bakesbangpol Ponorogo</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Bitter:wght@500;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/css/output.css" />
 </head>
 <body class="min-h-screen bg-cream text-ink antialiased">
@@ -18,17 +18,19 @@
         <h1 class="font-display text-xl font-bold">Kelola data E-IDI</h1>
       </div>
       <nav class="flex flex-wrap items-center gap-2 text-sm" aria-label="Navigasi admin">
-        <a href="/admin/" class="rounded-lg px-3 py-2 hover:bg-white/10">Dashboard berita</a>
+        <a href="/admin/" class="rounded-lg px-3 py-2 hover:bg-white/10">Berita &amp; komentar</a>
+        <a href="/admin/#pengaturan" class="rounded-lg px-3 py-2 hover:bg-white/10">Pengaturan situs</a>
+        <a href="/admin/idi.html" aria-current="page" class="rounded-lg bg-white/15 px-3 py-2 font-semibold text-primary">Data E-IDI</a>
         <a href="/idi.html" class="rounded-lg px-3 py-2 hover:bg-white/10">Lihat halaman publik</a>
         <button id="logout" type="button" class="rounded-lg bg-white/10 px-3 py-2 font-semibold hover:bg-white/20">Keluar</button>
       </nav>
     </div>
   </header>
 
-  <div id="toast" class="fixed right-4 top-4 z-50 hidden max-w-sm rounded-lg px-4 py-3 text-sm font-semibold shadow-lg" role="status"></div>
+  <div id="toast" class="fixed right-4 top-4 z-50 hidden max-w-sm rounded-lg px-4 py-3 text-sm font-semibold shadow-lg" role="status" data-motion="enter"></div>
 
   <main class="mx-auto max-w-7xl space-y-8 px-4 py-8 sm:px-6 lg:px-8">
-    <section class="grid gap-4 sm:grid-cols-3" aria-label="Ringkasan data E-IDI">
+    <section class="grid gap-4 sm:grid-cols-3" aria-label="Ringkasan data E-IDI" data-reveal>
       <article class="rounded-xl border border-amber-200 bg-white p-5 shadow-sm">
         <p class="text-sm font-semibold text-slate-500">Tahun kajian (data utama)</p>
         <p id="stat-tahun" class="mt-2 text-2xl font-bold text-ink">-</p>
@@ -43,12 +45,12 @@
       </article>
     </section>
 
-    <section class="grid items-start gap-8 xl:grid-cols-[minmax(0,0.85fr)_minmax(0,1.4fr)]">
+    <section class="grid items-start gap-8 xl:grid-cols-[minmax(0,0.85fr)_minmax(0,1.4fr)]" data-reveal>
       <form id="idiForm" class="space-y-5 rounded-2xl border border-amber-200 bg-white p-5 shadow-sm sm:p-7">
         <div class="border-b border-amber-100 pb-4">
           <p class="text-xs font-bold uppercase tracking-wider text-primary-dark">Pengelolaan indikator</p>
           <h2 id="formJudul" class="mt-1 text-xl font-bold">Tambah indikator E-IDI</h2>
-          <p class="mt-1 text-sm text-slate-600">Perubahan akan langsung tampil di halaman E-IDI publik.</p>
+          <p class="mt-1 text-sm text-slate-600">Data indikator yang disimpan akan langsung tampil di tabel E-IDI publik.</p>
         </div>
 
         <div>
@@ -88,7 +90,7 @@
           <button id="btnBatal" type="button" class="hidden rounded-lg px-4 py-2.5 text-sm font-semibold text-slate-700 ring-1 ring-ink/20 hover:bg-cream">Batal edit</button>
           <button id="btnReset" type="reset" class="rounded-lg px-4 py-2.5 text-sm font-semibold text-slate-700 ring-1 ring-ink/20 hover:bg-cream">Reset</button>
           <button id="btnSimpan" class="rounded-lg bg-primary px-5 py-2.5 text-sm font-bold text-ink hover:bg-accent hover:text-white">
-            <i class="fa-solid fa-floppy-disk mr-1" aria-hidden="true"></i><span>Simpan indikator</span>
+            <span>Simpan indikator</span>
           </button>
         </div>
       </form>
@@ -125,11 +127,13 @@
             <tbody id="indicatorTableBody" class="divide-y divide-amber-100"></tbody>
           </table>
         </div>
+        <p class="px-4 pb-3 text-xs text-slate-500 sm:hidden">Geser tabel ke samping untuk melihat seluruh kolom.</p>
         <p id="tabelKosong" class="hidden p-8 text-center text-sm text-slate-500">Belum ada indikator yang cocok.</p>
       </section>
     </section>
   </main>
 
+  <script src="/js/effects.js"></script>
   <script src="/admin/idi-admin.js"></script>
 </body>
 </html>

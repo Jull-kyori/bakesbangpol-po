@@ -22,7 +22,20 @@ const PUBLIC_DIR = path.join(__dirname, 'public');
 const UPLOAD_DIR = path.join(PUBLIC_DIR, 'uploads');
 const DATA_FILE = path.join(__dirname, 'data', 'berita.json');
 const COMMENTS_FILE = path.join(__dirname, 'data', 'komentar.json');
+const SITE_SETTINGS_FILE = path.join(__dirname, 'data', 'site-settings.json');
 const MAX_GALERI = 10;
+const DEFAULT_SITE_SETTINGS = Object.freeze({
+  brandName: 'BAKESBANGPOL',
+  organizationName: 'Badan Kesatuan Bangsa dan Politik',
+  district: 'Kabupaten Ponorogo',
+  address: 'Kabupaten Ponorogo, Jawa Timur',
+  phone: '',
+  email: '',
+  serviceHours: '',
+  announcementEnabled: false,
+  announcement: '',
+  assistantEnabled: true
+});
 
 if (IS_PRODUCTION) {
   if (ADMIN_PASSWORD.length < 16 || ADMIN_PASSWORD.startsWith('ganti_dengan_')) {
@@ -53,6 +66,75 @@ function readJsonFile(file, fallback) {
     if (error.code === 'ENOENT') return fallback;
     throw new Error(`Tidak dapat membaca ${path.basename(file)} sebagai JSON yang valid.`, { cause: error });
   }
+}
+
+function readSiteSettings() {
+  const saved = readJsonFile(SITE_SETTINGS_FILE, {});
+  if (!saved || typeof saved !== 'object' || Array.isArray(saved)) {
+    throw new Error('Pengaturan situs harus berupa object JSON.');
+  }
+  const settings = { ...DEFAULT_SITE_SETTINGS };
+  for (const field of ['brandName', 'organizationName', 'district', 'address', 'phone', 'email', 'serviceHours', 'announcement']) {
+    if (saved[field] !== undefined && typeof saved[field] !== 'string') {
+      throw new Error(`Pengaturan ${field} harus berupa teks.`);
+    }
+    if (saved[field] !== undefined) settings[field] = saved[field];
+  }
+  for (const field of ['announcementEnabled', 'assistantEnabled']) {
+    if (saved[field] !== undefined && typeof saved[field] !== 'boolean') {
+      throw new Error(`Pengaturan ${field} harus berupa pilihan aktif/nonaktif.`);
+    }
+    if (saved[field] !== undefined) settings[field] = saved[field];
+  }
+  return settings;
+}
+function publicSiteSettings() {
+  const { brandName, organizationName, district, address, phone, email, serviceHours,
+    announcementEnabled, announcement, assistantEnabled } = readSiteSettings();
+  return {
+    brandName, organizationName, district, address, phone, email, serviceHours,
+    announcementEnabled, announcement, assistantEnabled
+  };
+}
+function validateSiteSettings(body) {
+  const errors = [];
+  const stringField = (name, label, maxLength) => {
+    if (typeof body[name] !== 'string') {
+      errors.push(`${label} harus berupa teks.`);
+      return '';
+    }
+    const value = body[name].trim();
+    if (value.length > maxLength) errors.push(`${label} maksimal ${maxLength} karakter.`);
+    return value.slice(0, maxLength);
+  };
+  const settings = {
+    brandName: stringField('brandName', 'Nama singkat situs', 80),
+    organizationName: stringField('organizationName', 'Nama instansi', 120),
+    district: stringField('district', 'Nama wilayah', 80),
+    address: stringField('address', 'Alamat', 240),
+    phone: stringField('phone', 'Telepon', 40),
+    email: stringField('email', 'Email', 120),
+    serviceHours: stringField('serviceHours', 'Jam layanan', 120),
+    announcement: stringField('announcement', 'Pengumuman', 300)
+  };
+  for (const [field, label] of [['brandName', 'Nama singkat situs'], ['organizationName', 'Nama instansi'], ['district', 'Nama wilayah']]) {
+    if (!settings[field]) errors.push(`${label} wajib diisi.`);
+  }
+  if (settings.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(settings.email)) {
+    errors.push('Format email tidak valid.');
+  }
+  if (typeof body.announcementEnabled !== 'boolean' || typeof body.assistantEnabled !== 'boolean') {
+    errors.push('Status pengumuman dan asisten harus berupa pilihan aktif/nonaktif.');
+  }
+  if (body.announcementEnabled === true && !settings.announcement) {
+    errors.push('Isi pengumuman wajib diisi jika pengumuman diaktifkan.');
+  }
+  return { settings: { ...settings, announcementEnabled: body.announcementEnabled, assistantEnabled: body.assistantEnabled }, errors };
+}
+function writeSiteSettings(settings) {
+  const temporaryFile = SITE_SETTINGS_FILE + '.tmp';
+  fs.writeFileSync(temporaryFile, JSON.stringify(settings, null, 2));
+  fs.renameSync(temporaryFile, SITE_SETTINGS_FILE);
 }
 
 // --- Penyimpanan berita (file JSON) ---
@@ -303,6 +385,20 @@ app.post('/api/logout', (req, res) => {
   res.json({ ok: true });
 });
 app.get('/api/admin/me', requireAdmin, (req, res) => res.json({ ok: true }));
+app.get('/api/site-settings', (req, res) => {
+  const settings = publicSiteSettings();
+  res.set('Cache-Control', 'no-store');
+  res.json(settings);
+});
+app.get('/api/admin/site-settings', requireAdmin, (req, res) => {
+  res.json({ ...publicSiteSettings(), aiConfigured: Boolean(process.env.GROQ_API_KEY) });
+});
+app.put('/api/admin/site-settings', requireAdmin, (req, res) => {
+  const { settings, errors } = validateSiteSettings(req.body || {});
+  if (errors.length) return res.status(400).json({ error: errors.join(' ') });
+  writeSiteSettings(settings);
+  res.json({ ...settings, aiConfigured: Boolean(process.env.GROQ_API_KEY) });
+});
 
 app.get('/admin/idi.html', (req, res) => {
   if (!isAdmin(req)) return res.redirect('/admin/login.html?next=%2Fadmin%2Fidi.html');
@@ -361,7 +457,7 @@ function assistantKnowledge() {
       keywords: 'privasi data pribadi kebijakan aturan data'
     },
     {
-      id: 'kontak', title: 'Kontak Bakesbangpol', url: '/#site-footer',
+      id: 'kontak', title: 'Kontak Bakesbangpol', url: '/#kontak',
       content: 'Alamat dan informasi kontak yang tersedia dapat dilihat pada bagian bawah halaman. Jika nomor telepon atau email tidak tercantum, gunakan saluran resmi Pemerintah Kabupaten Ponorogo.',
       keywords: 'kontak alamat telepon email jam hubungi lokasi'
     }
@@ -394,6 +490,9 @@ function assistantKnowledge() {
 }
 
 app.post('/api/asisten', async (req, res) => {
+  if (!readSiteSettings().assistantEnabled) {
+    return res.status(503).json({ error: 'Asisten informasi sedang dinonaktifkan oleh pengelola situs.' });
+  }
   const now = Date.now();
   const ip = req.ip;
   let bucket = assistantBuckets.get(ip);

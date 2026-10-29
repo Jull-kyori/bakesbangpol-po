@@ -1,11 +1,16 @@
-/* Header, footer, dan fungsi bantu yang dipakai semua halaman publik.
-   Ubah data kontak di objek SITE di bawah ini. Kolom yang dikosongkan tidak ditampilkan. */
+/* Header, footer, dan fungsi bantu yang dipakai semua halaman publik. */
 (function () {
   const SITE = {
+    brandName: 'BAKESBANGPOL',
+    organizationName: 'Badan Kesatuan Bangsa dan Politik',
+    district: 'Kabupaten Ponorogo',
     alamat: 'Kabupaten Ponorogo, Jawa Timur',
     telepon: '',
     email: '',
-    jam: ''
+    jam: '',
+    announcementEnabled: false,
+    announcement: '',
+    assistantEnabled: true
   };
 
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) =>
@@ -28,7 +33,7 @@
 
   function cardBerita(b, big) {
     const img = b.gambar
-      ? `<img src="${esc(b.gambar)}" alt="" loading="lazy" class="${big ? 'h-64' : 'h-44'} w-full object-cover">`
+      ? `<img src="${esc(b.gambar)}" alt="" loading="lazy" decoding="async" class="${big ? 'h-64' : 'h-44'} w-full object-cover">`
       : `<div class="flex ${big ? 'h-64' : 'h-44'} items-center justify-center bg-primary/15 font-display text-5xl font-bold text-primary-dark">B</div>`;
     return `<a href="/berita-detail.html?id=${encodeURIComponent(b.id)}" class="group flex flex-col overflow-hidden rounded-xl bg-white ring-1 ring-ink/10 transition hover:ring-2 hover:ring-primary ${big ? 'lg:col-span-2' : ''}">
       ${img}
@@ -62,6 +67,24 @@
     { t: 'Kontak', h: '#kontak' }
   ];
   const chevron = (cls) => `<svg class="h-3 w-3 transition-transform duration-200 ${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>`;
+
+  function closeFloatingPanels() {
+    ['aksesibilitas-panel', 'asisten-panel'].forEach((id) => {
+      const panel = document.getElementById(id);
+      const toggle = document.querySelector(`[aria-controls="${id}"]`);
+      if (panel) panel.classList.add('hidden');
+      if (toggle) toggle.setAttribute('aria-expanded', 'false');
+    });
+  }
+
+  function closeMobileMenu() {
+    const panel = document.getElementById('menu-panel');
+    const toggle = document.getElementById('menu-btn');
+    if (!panel || !toggle) return;
+    panel.classList.add('hidden');
+    toggle.setAttribute('aria-expanded', 'false');
+    toggle.setAttribute('aria-label', 'Buka menu');
+  }
 
   const header = document.getElementById('site-header');
   if (header) {
@@ -105,7 +128,7 @@
         <a href="/" class="flex items-center gap-3">
           <!-- LOGO: jika kamu sudah memakai logo sendiri, tempel ulang markup logomu di sini -->
           <span class="relative flex h-10 w-10 items-center justify-center rounded-full bg-primary font-display font-bold text-ink">B<img src="/assets/img/logo.png" alt="" class="absolute inset-0 h-full w-full rounded-full bg-white object-contain" onerror="this.remove()"></span>
-          <span class="leading-tight"><span class="block font-display text-lg font-bold">BAKESBANGPOL</span><span class="block text-xs text-white/75">Kabupaten Ponorogo</span></span>
+          <span class="leading-tight"><span data-site-brand class="block font-display text-lg font-bold">BAKESBANGPOL</span><span data-site-district class="block text-xs text-white/75">Kabupaten Ponorogo</span></span>
         </a>
         <nav class="hidden items-center gap-5 text-sm font-medium xl:flex 2xl:gap-7" aria-label="Menu utama">${desktop}</nav>
         <button id="menu-btn" type="button" aria-label="Buka menu" aria-expanded="false" aria-controls="menu-panel" class="rounded-lg p-2 hover:bg-white/10 xl:hidden">
@@ -120,6 +143,7 @@
       const open = panel.classList.toggle('hidden') === false;
       btn.setAttribute('aria-expanded', String(open));
       btn.setAttribute('aria-label', open ? 'Tutup menu' : 'Buka menu');
+      if (open) closeFloatingPanels();
     });
     panel.addEventListener('click', (e) => {
       if (!e.target.closest('a')) return;
@@ -166,9 +190,9 @@
     footer.innerHTML = `
       <div class="mx-auto grid max-w-7xl gap-10 px-6 py-14 md:grid-cols-3">
         <div>
-          <p class="font-display text-xl font-bold">Badan Kesatuan Bangsa dan Politik</p>
-          <p class="text-white/75">Kabupaten Ponorogo</p>
-          <dl class="mt-5 space-y-2 text-sm text-white/85">
+          <p data-site-organization class="font-display text-xl font-bold">Badan Kesatuan Bangsa dan Politik</p>
+          <p data-footer-district class="text-white/75">Kabupaten Ponorogo</p>
+          <dl data-site-contact class="mt-5 space-y-2 text-sm text-white/85">
             ${rows.map(([k, v]) => `<div><dt class="inline font-semibold text-primary">${esc(k)}:</dt> <dd class="inline">${esc(v)}</dd></div>`).join('')}
           </dl>
         </div>
@@ -234,7 +258,7 @@
           <button id="asisten-close" type="button" aria-label="Tutup asisten" class="rounded-lg px-2 py-1 text-white/80 hover:bg-white/10">Tutup</button>
         </div>
         <p class="border-b border-ink/10 bg-cream px-4 py-2 text-xs leading-relaxed text-slate-600">Pertanyaan dan konteks chat dikirim ke layanan AI Groq. Situs tidak menyimpan riwayat. Jangan kirim data pribadi atau rahasia; jawaban AI dapat keliru.</p>
-        <div id="asisten-pesan" class="flex max-h-72 min-h-32 flex-col gap-3 overflow-y-auto p-4" aria-live="polite">
+        <div id="asisten-pesan" class="flex max-h-[min(18rem,calc(100dvh-21rem))] min-h-32 flex-col gap-3 overflow-y-auto p-4" aria-live="polite">
           <p class="max-w-[90%] self-start rounded-xl rounded-tl-sm bg-cream px-3 py-2 text-sm">Halo! Tanyakan apa saja dengan kalimatmu sendiri. Saya membantu soal Bakesbangpol berdasarkan informasi situs dan bisa menjawab pertanyaan umum. Tombol di bawah hanya contoh.</p>
           <div class="flex flex-wrap gap-2">
             <button type="button" data-tanya="Apa tugas Bakesbangpol?" class="rounded-full px-3 py-1.5 text-xs font-semibold text-primary-dark ring-1 ring-primary-dark/30 hover:bg-primary/15">Tugas Bakesbangpol</button>
@@ -250,6 +274,68 @@
       </section>
     </div>`;
   document.body.appendChild(widget);
+
+  async function applySiteSettings() {
+    try {
+      const response = await fetch('/api/site-settings');
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const settings = await response.json();
+      Object.assign(SITE, {
+        brandName: settings.brandName,
+        organizationName: settings.organizationName,
+        district: settings.district,
+        alamat: settings.address,
+        telepon: settings.phone,
+        email: settings.email,
+        jam: settings.serviceHours,
+        announcementEnabled: settings.announcementEnabled,
+        announcement: settings.announcement,
+        assistantEnabled: settings.assistantEnabled
+      });
+
+      const brand = document.querySelector('[data-site-brand]');
+      const district = document.querySelector('[data-site-district]');
+      const organization = document.querySelector('[data-site-organization]');
+      const footerDistrict = document.querySelector('[data-footer-district]');
+      if (brand) brand.textContent = SITE.brandName;
+      if (district) district.textContent = SITE.district;
+      if (organization) organization.textContent = SITE.organizationName;
+      if (footerDistrict) footerDistrict.textContent = SITE.district;
+
+      const contactList = document.querySelector('[data-site-contact]');
+      if (contactList) {
+        const rows = [
+          ['Alamat', SITE.alamat],
+          ['Telepon', SITE.telepon],
+          ['Email', SITE.email],
+          ['Jam layanan', SITE.jam]
+        ].filter(([, value]) => value);
+        contactList.innerHTML = rows.map(([label, value]) =>
+          `<div><dt class="inline font-semibold text-primary">${esc(label)}:</dt> <dd class="inline">${esc(value)}</dd></div>`
+        ).join('');
+      }
+
+      if (mainContent && SITE.announcementEnabled && SITE.announcement) {
+        let banner = document.getElementById('site-announcement');
+        if (!banner) {
+          banner = document.createElement('aside');
+          banner.id = 'site-announcement';
+          banner.setAttribute('role', 'status');
+          banner.className = 'mx-auto mb-6 max-w-7xl rounded-xl border border-amber-300 bg-amber-50 px-5 py-4 text-amber-950 shadow-sm';
+          mainContent.prepend(banner);
+        }
+        banner.textContent = SITE.announcement;
+      }
+
+      if (!SITE.assistantEnabled) {
+        document.getElementById('asisten-toggle').classList.add('hidden');
+        document.getElementById('asisten-panel').classList.add('hidden');
+      }
+    } catch (error) {
+      console.warn(`[Pengaturan situs] Tidak dapat memuat pengaturan: ${error.message}`);
+    }
+  }
+  applySiteSettings();
 
   const accessToggle = document.getElementById('aksesibilitas-toggle');
   const accessPanel = document.getElementById('aksesibilitas-panel');
@@ -277,6 +363,11 @@
   accessToggle.addEventListener('click', () => {
     const open = accessPanel.classList.toggle('hidden') === false;
     accessToggle.setAttribute('aria-expanded', String(open));
+    if (open) {
+      closeMobileMenu();
+      document.getElementById('asisten-panel').classList.add('hidden');
+      document.getElementById('asisten-toggle').setAttribute('aria-expanded', 'false');
+    }
   });
   accessPanel.addEventListener('click', (event) => {
     const close = event.target.closest('[data-akses-close]');
@@ -344,7 +435,10 @@
       return 'E-IDI menampilkan informasi Indeks Demokrasi Indonesia, termasuk aspek, skor, dan tren. Buka menu E-IDI untuk melihat datanya.';
     }
     if (/kontak|alamat|telepon|email|jam|hubungi/.test(q)) {
-      return 'Alamat dan informasi kontak yang tersedia dapat dilihat pada bagian bawah halaman. Jika nomor telepon atau email tidak tercantum, gunakan saluran resmi Pemerintah Kabupaten Ponorogo.';
+      const contact = [SITE.alamat, SITE.telepon, SITE.email, SITE.jam].filter(Boolean).join('; ');
+      return contact
+        ? `Informasi kontak: ${contact}.`
+        : 'Informasi kontak belum dicantumkan. Gunakan saluran resmi Pemerintah Kabupaten Ponorogo.';
     }
     if (/komentar|balas|suka|lapor/.test(q)) {
       return 'Pada halaman detail berita, Anda dapat mengirim komentar dengan nama tampilan. Komentar tampil setelah disetujui admin. Aturan dan privasi tersedia di halaman Kebijakan.';
@@ -403,7 +497,12 @@
   assistantToggle.addEventListener('click', () => {
     const open = assistantPanel.classList.toggle('hidden') === false;
     assistantToggle.setAttribute('aria-expanded', String(open));
-    if (open) assistantInput.focus();
+    if (open) {
+      closeMobileMenu();
+      accessPanel.classList.add('hidden');
+      accessToggle.setAttribute('aria-expanded', 'false');
+      assistantInput.focus();
+    }
   });
   document.getElementById('asisten-close').addEventListener('click', () => {
     assistantPanel.classList.add('hidden');

@@ -63,6 +63,7 @@
         <button data-edit="${esc(b.id)}" class="rounded-lg px-3 py-1.5 text-sm font-semibold text-accent ring-1 ring-accent/40 hover:bg-accent hover:text-white">Edit</button>
         <button data-del="${esc(b.id)}" class="rounded-lg px-3 py-1.5 text-sm font-semibold text-red-700 ring-1 ring-red-300 hover:bg-red-700 hover:text-white">Hapus</button>
       </li>`).join('') : '<li class="rounded-xl bg-white p-8 text-center text-slate-600">Belum ada berita. Tulis berita pertama di formulir.</li>';
+    if (window.FX) window.FX.reveal($('#list').children);
 
     let h = '';
     for (let i = 1; i <= d.pages && d.pages > 1; i++) {
@@ -107,7 +108,63 @@
           <button data-delete-comment="${esc(comment.id)}" class="rounded-lg px-3 py-1.5 text-sm font-semibold text-red-700 ring-1 ring-red-300 hover:bg-red-50">Hapus permanen</button>
         </div>
       </li>`).join('') : '<li class="rounded-xl bg-white p-4 text-sm text-slate-500 ring-1 ring-ink/10">Belum ada komentar.</li>';
+    if (window.FX) {
+      window.FX.reveal($('#laporan-list').children);
+      window.FX.reveal($('#komentar-admin-list').children);
+    }
   }
+
+  async function loadSiteSettings() {
+    const settings = await api('/api/admin/site-settings');
+    $('#setting-brand').value = settings.brandName;
+    $('#setting-organization').value = settings.organizationName;
+    $('#setting-district').value = settings.district;
+    $('#setting-address').value = settings.address;
+    $('#setting-phone').value = settings.phone;
+    $('#setting-email').value = settings.email;
+    $('#setting-hours').value = settings.serviceHours;
+    $('#setting-announcement-enabled').checked = settings.announcementEnabled;
+    $('#setting-announcement').value = settings.announcement;
+    $('#setting-assistant-enabled').checked = settings.assistantEnabled;
+    $('#setting-ai-status').textContent = settings.aiConfigured
+      ? 'Kunci AI terpasang di server. Status asisten dapat diubah di sini.'
+      : 'Kunci AI belum dikonfigurasi. Asisten hanya dapat menampilkan panduan lokal sampai pengelola server mengatur GROQ_API_KEY.';
+  }
+
+  $('#site-settings-form').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const button = $('#save-site-settings');
+    const feedback = $('#site-settings-feedback');
+    button.disabled = true;
+    feedback.textContent = 'Menyimpan...';
+    feedback.className = 'text-sm text-slate-600';
+    const settings = {
+      brandName: $('#setting-brand').value,
+      organizationName: $('#setting-organization').value,
+      district: $('#setting-district').value,
+      address: $('#setting-address').value,
+      phone: $('#setting-phone').value,
+      email: $('#setting-email').value,
+      serviceHours: $('#setting-hours').value,
+      announcementEnabled: $('#setting-announcement-enabled').checked,
+      announcement: $('#setting-announcement').value,
+      assistantEnabled: $('#setting-assistant-enabled').checked
+    };
+    try {
+      await api('/api/admin/site-settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(settings)
+      });
+      feedback.textContent = 'Pengaturan berhasil disimpan dan sudah diterapkan.';
+      feedback.className = 'text-sm font-semibold text-green-800';
+    } catch (error) {
+      feedback.textContent = error.message;
+      feedback.className = 'text-sm font-semibold text-red-700';
+    } finally {
+      button.disabled = false;
+    }
+  });
 
   async function moderateComment(id, status) {
     if (status === 'rejected' && !confirm('Tolak komentar ini beserta semua balasannya?')) return;
@@ -230,6 +287,7 @@
       await loadKategori();
       await loadList();
       await loadModeration();
+      await loadSiteSettings();
     } catch (e) {
       if (!location.pathname.endsWith('/login.html')) toast(e.message, false);
     }

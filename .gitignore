@@ -2,5 +2,7 @@ node_modules
 .env
 data/komentar.json
 data/idi-audit.log
+data/site-settings.json
+data/site-settings.json.tmp
 public/uploads/*
 !public/uploads/.gitkeep

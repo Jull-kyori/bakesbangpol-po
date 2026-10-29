@@ -31,11 +31,16 @@ npm start
 
 - `data/berita.json` menyimpan berita publik.
 - `data/idi.json` menyimpan data E-IDI.
+- Pengaturan identitas/kontak, banner, dan status asisten disimpan di `data/site-settings.json` (diabaikan Git).
 - Komentar, reaksi, dan laporan disimpan di `data/komentar.json` (diabaikan Git).
 - Gambar berita dan dokumen E-IDI disimpan di `public/uploads/`.
 - `data/idi-audit.log` mencatat waktu, IP, tindakan, dan ringkasan perubahan E-IDI. File ini diabaikan Git; batasi akses dan tetapkan masa retensi sesuai kebijakan instansi.
 
 Cadangkan `data/` dan `public/uploads/` secara berkala ke media yang aksesnya dibatasi, dan uji pemulihan cadangan. Jangan mengunggah `.env`, backup berisi data pengguna, atau log audit ke repositori.
+
+Admin dashboard menyediakan menu **Pengaturan situs** untuk identitas dan kontak, banner pengumuman, serta mengaktifkan atau menonaktifkan asisten AI. Pengaturan disimpan pada disk server; lakukan backup dan pastikan disk tetap persisten. Kunci Groq tidak ditampilkan atau diubah dari dashboard, melainkan dikelola oleh administrator server melalui `GROQ_API_KEY`.
+
+Panel admin berita, pengaturan situs, dan E-IDI menggunakan sesi login yang sama dan saling terhubung melalui navigasi admin.
 
 ## Persiapan sebelum serah-terima/publikasi
 
