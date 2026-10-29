@@ -42,6 +42,22 @@ Admin dashboard menyediakan menu **Pengaturan situs** untuk identitas dan kontak
 
 Panel admin berita, pengaturan situs, dan E-IDI menggunakan sesi login yang sama dan saling terhubung melalui navigasi admin.
 
+## Rencana tahap berikutnya: migrasi ke database
+
+Penyimpanan JSON saat ini sesuai untuk pengembangan lokal dan uji coba awal. Sebelum serah-terima dan deployment operasional kepada pihak Bakesbangpol, rencanakan migrasi ke database terkelola agar data lebih konsisten, mudah dicadangkan, dan siap dikembangkan. Pilihan produk database perlu ditentukan bersama pengelola infrastruktur instansi berdasarkan layanan yang tersedia, kebijakan keamanan, anggaran, dan kemampuan operasional; jangan mengasumsikan penyedia tertentu sebelum keputusan tersebut dibuat.
+
+Urutan pekerjaan yang disarankan:
+
+1. **Tentukan kebutuhan dan layanan** — sepakati penyedia/jenis database, lingkungan dev dan produksi, kepemilikan akun, lokasi data, retensi, backup, serta siapa yang bertanggung jawab mengoperasikannya.
+2. **Rancang skema dan pemetaan data** — susun tabel dan relasi untuk berita, kategori, komentar dan balasan, reaksi, laporan, pengaturan situs, indikator E-IDI, serta metadata dokumen; tetapkan batasan, indeks, dan kebijakan penghapusan.
+3. **Siapkan migrasi yang dapat diulang dan diverifikasi** — buat versi skema, alat impor JSON yang aman untuk dijalankan ulang, validasi jumlah dan keterkaitan data, serta laporan rekonsiliasi sebelum sumber data lama dihentikan.
+4. **Pindahkan akses data ke lapisan penyimpanan** — ganti pembacaan/penulisan JSON dengan repository atau layanan data yang konsisten, memakai transaksi untuk perubahan terkait dan validasi di server. Pertahankan kontrak API serta perilaku situs selama transisi.
+5. **Amankan koneksi dan kredensial** — simpan connection string sebagai secret lingkungan server, gunakan hak akses minimum, enkripsi koneksi, dan jangan masukkan kredensial ke Git atau browser.
+6. **Uji pemulihan dan operasional** — uji backup/restore, migrasi di staging, beban dan konkurensi, penanganan kegagalan, pemantauan, retensi log audit, serta prosedur rollback.
+7. **Lakukan cutover dengan persetujuan instansi** — ambil backup final, impor dan verifikasi data, alihkan aplikasi ke database, pantau hasilnya, lalu pertahankan sumber lama hanya sesuai masa retensi yang disepakati.
+
+Migrasi ini belum diterapkan. Sampai seluruh langkah selesai dan diverifikasi, batasan penyimpanan JSON yang dijelaskan di bagian deployment tetap berlaku. Berkas unggahan tetap perlu penyimpanan file persisten atau object storage yang disetujui; database tidak otomatis menyimpan file tersebut.
+
 ## Persiapan sebelum serah-terima/publikasi
 
 Konfirmasi dan isi bersama pihak Bakesbangpol:
