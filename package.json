@@ -1,0 +1,19 @@
+{
+  "name": "bakesbangpol-ponorogo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Website Bakesbangpol Kabupaten Ponorogo (HTML + Tailwind) dengan dashboard admin berita",
+  "scripts": {
+    "start": "node server.js",
+    "css": "tailwindcss -i ./src/input.css -o ./public/css/output.css --minify",
+    "dev:css": "tailwindcss -i ./src/input.css -o ./public/css/output.css --watch"
+  },
+  "dependencies": {
+    "express": "^4.21.0",
+    "multer": "^2.0.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.0.0",
+    "tailwindcss": "^4.0.0"
+  }
+}

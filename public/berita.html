@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Berita | Bakesbangpol Kabupaten Ponorogo</title>
+  <meta name="description" content="Berita dan kegiatan Badan Kesatuan Bangsa dan Politik Kabupaten Ponorogo." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bitter:wght@500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/output.css" />
+</head>
+<body class="bg-cream text-slate-800 antialiased">
+  <header id="site-header" data-variant="solid"></header>
+
+  <main class="mx-auto max-w-7xl px-6 py-12">
+    <h1 class="text-4xl font-bold text-ink">Berita</h1>
+    <p class="mt-2 text-slate-600">Kegiatan dan informasi terbaru dari Bakesbangpol Kabupaten Ponorogo.</p>
+
+    <form id="filter" class="mt-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+      <div id="chips" class="flex flex-wrap gap-2"></div>
+      <div class="flex gap-2">
+        <label for="q" class="sr-only">Cari berita</label>
+        <input id="q" type="search" placeholder="Cari berita" class="w-full rounded-full border border-ink/20 bg-white px-5 py-2 text-sm md:w-72" />
+        <button class="rounded-full bg-ink px-5 py-2 text-sm font-semibold text-white hover:bg-accent">Cari</button>
+      </div>
+    </form>
+
+    <p id="info" class="mt-6 text-sm text-slate-500"></p>
+    <div id="list" class="mt-4 grid gap-6 sm:grid-cols-2 lg:grid-cols-3"></div>
+    <nav id="pager" class="mt-10 flex flex-wrap items-center justify-center gap-2" aria-label="Halaman berita"></nav>
+  </main>
+
+  <footer id="site-footer"></footer>
+  <script src="/js/layout.js"></script>
+  <script>
+    (async function () {
+      const { esc, cardBerita } = window.BK;
+      const params = new URLSearchParams(location.search);
+      const state = { kategori: params.get('kategori') || '', q: params.get('q') || '', page: parseInt(params.get('page'), 10) || 1 };
+      document.getElementById('q').value = state.q;
+
+      const kategori = await fetch('/api/kategori').then((r) => r.json()).catch(() => []);
+      const chips = document.getElementById('chips');
+      chips.innerHTML = ['', ...kategori].map((k) =>
+        `<button type="button" data-k="${esc(k)}" class="rounded-full px-4 py-2 text-sm font-semibold ${k === state.kategori ? 'bg-primary text-ink' : 'bg-white text-ink ring-1 ring-ink/15 hover:ring-primary'}">${esc(k || 'Semua')}</button>`
+      ).join('');
+      chips.addEventListener('click', (e) => {
+        const b = e.target.closest('button'); if (!b) return;
+        state.kategori = b.dataset.k; state.page = 1; go();
+      });
+      document.getElementById('filter').addEventListener('submit', (e) => {
+        e.preventDefault(); state.q = document.getElementById('q').value.trim(); state.page = 1; go();
+      });
+      function go() {
+        const p = new URLSearchParams();
+        if (state.kategori) p.set('kategori', state.kategori);
+        if (state.q) p.set('q', state.q);
+        if (state.page > 1) p.set('page', state.page);
+        location.search = p.toString();
+      }
+
+      const p = new URLSearchParams({ limit: 9, page: state.page });
+      if (state.kategori) p.set('kategori', state.kategori);
+      if (state.q) p.set('q', state.q);
+      const list = document.getElementById('list');
+      try {
+        const d = await fetch('/api/berita?' + p).then((r) => r.json());
+        document.getElementById('info').textContent = d.total + ' berita ditemukan';
+        if (!d.items.length) {
+          list.innerHTML = '<p class="col-span-full rounded-xl bg-white p-8 text-center text-slate-600">Tidak ada berita yang cocok. Coba kata kunci atau kategori lain.</p>';
+        } else {
+          list.innerHTML = d.items.map((b) => cardBerita(b)).join('');
+        }
+        const pager = document.getElementById('pager');
+        if (d.pages > 1) {
+          let h = '';
+          for (let i = 1; i <= d.pages; i++) {
+            h += `<button data-p="${i}" class="h-10 w-10 rounded-full text-sm font-semibold ${i === d.page ? 'bg-primary text-ink' : 'bg-white ring-1 ring-ink/15 hover:ring-primary'}" ${i === d.page ? 'aria-current="page"' : ''}>${i}</button>`;
+          }
+          pager.innerHTML = h;
+          pager.addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) { state.page = +b.dataset.p; go(); } });
+        }
+      } catch {
+        list.innerHTML = '<p class="col-span-full rounded-xl bg-white p-8 text-center text-slate-600">Berita belum bisa dimuat. Muat ulang halaman ini beberapa saat lagi.</p>';
+      }
+    })();
+  </script>
+</body>
+</html>

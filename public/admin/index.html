@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex" />
+  <title>Dashboard Admin | Bakesbangpol Ponorogo</title>
+  <link rel="stylesheet" href="/css/output.css" />
+</head>
+<body class="bg-cream text-slate-800 antialiased">
+  <header class="bg-ink text-white">
+    <div class="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+      <p class="font-display text-lg font-bold">Dashboard berita</p>
+      <div class="flex items-center gap-4 text-sm">
+        <a href="/idi.html" class="hover:text-primary">Kelola data IDI</a>
+        <a href="/" target="_blank" class="hover:text-primary">Lihat website</a>
+        <button id="logout" type="button" class="rounded-lg bg-white/10 px-3 py-1.5 font-semibold hover:bg-white/20">Keluar</button>
+      </div>
+    </div>
+  </header>
+
+  <div id="toast" class="fixed right-4 top-4 z-50 hidden max-w-sm rounded-lg px-4 py-3 text-sm font-semibold shadow-lg" role="status"></div>
+
+  <main class="mx-auto grid max-w-6xl gap-8 px-6 py-10 lg:grid-cols-5">
+
+    <!-- Form -->
+    <section class="lg:col-span-2">
+      <form id="form" class="rounded-xl bg-white p-6 ring-1 ring-ink/10">
+        <h2 id="form-title" class="text-xl font-bold text-ink">Tulis berita baru</h2>
+
+        <div class="mt-5 space-y-4">
+          <div>
+            <label for="judul" class="text-sm font-semibold text-ink">Judul</label>
+            <input id="judul" name="judul" required maxlength="200" class="mt-1 w-full rounded-lg border border-ink/20 px-3 py-2" />
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label for="kategori" class="text-sm font-semibold text-ink">Kategori</label>
+              <select id="kategori" name="kategori" required class="mt-1 w-full rounded-lg border border-ink/20 bg-white px-3 py-2"></select>
+            </div>
+            <div>
+              <label for="tanggal" class="text-sm font-semibold text-ink">Tanggal</label>
+              <input id="tanggal" name="tanggal" type="date" required class="mt-1 w-full rounded-lg border border-ink/20 px-3 py-2" />
+            </div>
+          </div>
+          <div>
+            <label for="gambar" class="text-sm font-semibold text-ink">Gambar cover (JPG, PNG, WebP, maks. 3 MB)</label>
+            <input id="gambar" name="gambar" type="file" accept="image/jpeg,image/png,image/webp" class="mt-1 w-full text-sm" />
+            <div id="gambar-lama" class="mt-2 hidden">
+              <img id="gambar-preview" alt="" class="h-28 rounded-lg object-cover" />
+              <label class="mt-2 flex items-center gap-2 text-sm"><input type="checkbox" name="hapus_gambar" /> Hapus gambar ini</label>
+            </div>
+             <div>
+            <label for="galeri" class="text-sm font-semibold text-ink">Foto tambahan untuk galeri (maks. 10, opsional)</label>
+            <input id="galeri" name="galeri" type="file" multiple accept="image/jpeg,image/png,image/webp" class="mt-1 w-full text-sm" />
+            <p class="mt-1 text-sm text-slate-500">Bisa pilih banyak foto sekaligus. Foto ini tampil di halaman berita, di bawah isi.</p>
+            <div id="galeri-lama" class="mt-3 hidden">
+              <p class="text-sm font-semibold text-ink">Foto galeri saat ini</p>
+              <div id="galeri-lama-isi" class="mt-2 grid grid-cols-3 gap-2"></div>
+            </div>
+          </div>
+          </div>
+          <div>
+            <label for="isi" class="text-sm font-semibold text-ink">Isi berita</label>
+            <textarea id="isi" name="isi" rows="10" required class="mt-1 w-full rounded-lg border border-ink/20 px-3 py-2"></textarea>
+            <p class="mt-1 text-sm text-slate-500">Pisahkan paragraf dengan satu baris kosong.</p>
+          </div>
+        </div>
+
+        <div class="mt-6 flex gap-3">
+          <button id="submit" class="rounded-lg bg-primary px-5 py-2.5 font-semibold text-ink hover:bg-accent hover:text-white">Terbitkan</button>
+          <button id="cancel" type="button" class="hidden rounded-lg px-5 py-2.5 font-semibold text-slate-600 ring-1 ring-ink/20 hover:bg-cream">Batal</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Daftar -->
+    <section class="lg:col-span-3">
+      <h2 class="text-xl font-bold text-ink">Berita yang sudah terbit <span id="total" class="text-base font-normal text-slate-500"></span></h2>
+      <ul id="list" class="mt-5 space-y-3"></ul>
+      <div id="pager" class="mt-6 flex flex-wrap gap-2"></div>
+    </section>
+  </main>
+
+  <script src="/admin/admin.js"></script>
+</body>
+</html>

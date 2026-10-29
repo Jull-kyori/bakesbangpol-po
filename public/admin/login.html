@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex" />
+  <title>Masuk Admin | Bakesbangpol Ponorogo</title>
+  <link rel="stylesheet" href="/css/output.css" />
+</head>
+<body class="flex min-h-screen items-center justify-center bg-cream px-6 text-slate-800 antialiased">
+  <main class="w-full max-w-sm rounded-xl bg-white p-8 ring-1 ring-ink/10">
+    <h1 class="text-2xl font-bold text-ink">Masuk admin</h1>
+    <p class="mt-1 text-sm text-slate-600">Khusus pengelola berita Bakesbangpol.</p>
+    <form id="form" class="mt-6 space-y-4">
+      <div>
+        <label for="password" class="text-sm font-semibold text-ink">Password</label>
+        <input id="password" type="password" required autocomplete="current-password" class="mt-1 w-full rounded-lg border border-ink/20 px-4 py-2" />
+      </div>
+      <p id="error" class="hidden text-sm font-semibold text-red-700" role="alert"></p>
+      <button class="w-full rounded-lg bg-primary px-4 py-2.5 font-semibold text-ink hover:bg-accent hover:text-white">Masuk</button>
+    </form>
+  </main>
+  <script>
+    document.getElementById('form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const err = document.getElementById('error');
+      err.classList.add('hidden');
+      try {
+        const r = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: document.getElementById('password').value })
+        });
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.error || 'Gagal masuk.');
+        location.href = '/admin/';
+      } catch (ex) {
+        err.textContent = ex.message;
+        err.classList.remove('hidden');
+      }
+    });
+  </script>
+</body>
+</html>

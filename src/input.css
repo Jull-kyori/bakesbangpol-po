@@ -1,0 +1,59 @@
+@import "tailwindcss";
+@source "../public";
+
+@theme {
+  --color-primary: #f59e0b;       /* kuning keemasan (warna utama) */
+  --color-primary-dark: #b45309;  /* oranye tua (teks aksen, kontras aman di atas putih) */
+  --color-accent: #ea580c;        /* oranye terang (tombol, hover) */
+  --color-ink: #3b1d05;           /* cokelat tua (latar gelap & teks) */
+  --color-cream: #fffaf0;         /* putih hangat (latar halaman) */
+  --font-display: "Bitter", Georgia, "Times New Roman", serif;
+}
+
+@layer base {
+  html { scroll-behavior: smooth; }
+  h1, h2, h3 { font-family: var(--font-display); }
+  :focus-visible { outline: 3px solid var(--color-accent); outline-offset: 2px; }
+}
+
+/* Hero: kipas bulu merak (merujuk Dadak Merak Reog Ponorogo), murni CSS */
+.hero-fan {
+  background-color: var(--color-ink);
+  background-image:
+    repeating-conic-gradient(from 190deg at 82% 118%,
+      rgb(245 158 11 / .28) 0deg 3deg, transparent 3deg 8deg),
+    radial-gradient(60% 80% at 82% 118%, rgb(234 88 12 / .55), transparent 70%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  * { transition: none !important; }
+}
+
+/* ===== Interaksi (tambahan) ===== */
+html { scroll-padding-top: 5rem; } /* anchor tidak tertutup menu yang menempel */
+
+/* Garis bawah menu yang meluncur saat disorot / bagian sedang dilihat */
+.nav-link { position: relative; }
+.nav-link::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: -4px; height: 2px;
+  background: var(--color-primary); transform: scaleX(0); transform-origin: left;
+  transition: transform .25s ease;
+}
+.nav-link:hover::after,
+.nav-link.is-active::after,
+.group:hover > .nav-link::after,
+.group:focus-within > .nav-link::after { transform: scaleX(1); }
+
+/* Muncul halus saat di-scroll. Kelas .reveal ditambahkan oleh effects.js,
+   jadi jika JavaScript mati, semua konten tetap terlihat. */
+@layer components {
+  .reveal {
+    opacity: 0; transform: translateY(24px);
+    transition: opacity .6s ease, transform .6s ease; transition-delay: var(--d, 0ms);
+  }
+  .reveal.is-visible { opacity: 1; transform: none; }
+}
+
+/* Batang skor yang terisi perlahan */
+.fill-bar { width: 0; transition: width 1.2s cubic-bezier(.2, .7, .2, 1); }

@@ -1,0 +1,102 @@
+{
+  "tahun": 2026,
+  "skorTotal": 81.06,
+  "sumberTren": "Terverifikasi BPS",
+  "aspek": [
+    {
+      "kode": "Kebebasan Sipil",
+      "romawi": "Aspek I",
+      "judul": "Kebebasan Sipil",
+      "singkat": "Kebebasan Sipil",
+      "deskripsi": "Hak berserikat, berkumpul, berpendapat, dan berkeyakinan.",
+      "skor": 81.02,
+      "ikon": "fa-hands-holding-circle"
+    },
+    {
+      "kode": "Kesetaraan Politik",
+      "romawi": "Aspek II",
+      "judul": "Kesetaraan Politik",
+      "singkat": "Kesetaraan Politik",
+      "deskripsi": "Kesempatan partisipasi tanpa diskriminasi & layanan dasar.",
+      "skor": 82.46,
+      "ikon": "fa-scale-balanced"
+    },
+    {
+      "kode": "Lembaga Demokrasi",
+      "romawi": "Aspek III",
+      "judul": "Kapasitas Lembaga Demokrasi",
+      "singkat": "Kapasitas Lembaga",
+      "deskripsi": "Kinerja DPRD, Yudikatif, Birokrasi, dan Parpol.",
+      "skor": 79.72,
+      "ikon": "fa-landmark"
+    }
+  ],
+  "tren": [
+    {
+      "tahun": 2021,
+      "nilai": 72.4
+    },
+    {
+      "tahun": 2022,
+      "nilai": 74.1
+    },
+    {
+      "tahun": 2023,
+      "nilai": 75.8
+    },
+    {
+      "tahun": 2024,
+      "nilai": 77.2
+    },
+    {
+      "tahun": 2025,
+      "nilai": 79.5
+    },
+    {
+      "tahun": 2026,
+      "nilai": 81.06
+    }
+  ],
+  "indikator": [
+    {
+      "id": "contoh1",
+      "aspek": "Kebebasan Sipil",
+      "indikator": "Kebebasan Berkumpul dan Berserikat",
+      "catatan": "Tidak ada pembatasan atau pembubaran kegiatan ormas yang sah oleh aparat.",
+      "skor": 100,
+      "dokumen": "",
+      "dokumenNama": "",
+      "updatedAt": "2026-10-27T00:00:00.000Z"
+    },
+    {
+      "id": "contoh2",
+      "aspek": "Kesetaraan Politik",
+      "indikator": "Akses Warga Miskin pada Jaminan Sosial",
+      "catatan": "Persentase penduduk miskin terjangkau layanan kesehatan JKN/BPJS.",
+      "skor": 61.05,
+      "dokumen": "",
+      "dokumenNama": "",
+      "updatedAt": "2026-10-27T00:00:01.000Z"
+    },
+    {
+      "id": "contoh3",
+      "aspek": "Lembaga Demokrasi",
+      "indikator": "Kinerja Birokrasi dalam Pelayanan Publik",
+      "catatan": "Indeks Pelayanan Publik (IPP) berdasarkan evaluasi KemenPANRB.",
+      "skor": 91.8,
+      "dokumen": "",
+      "dokumenNama": "",
+      "updatedAt": "2026-10-27T00:00:02.000Z"
+    },
+    {
+      "id": "b85bbfcf8fc9",
+      "aspek": "Kebebasan Sipil",
+      "indikator": "Ayuk Mode Sad",
+      "catatan": "sncsjvbjkbvjsvsvsdvdvd",
+      "skor": 100,
+      "dokumen": "/uploads/idi/649ba9034f10fbdd19d735cd.png",
+      "dokumenNama": "screencapture-bps-go-id-id-statistics-table-2026-10-28-12_27_24.png",
+      "updatedAt": "2026-10-29T03:10:56.624Z"
+    }
+  ]
+}

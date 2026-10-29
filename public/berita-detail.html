@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Berita | Bakesbangpol Kabupaten Ponorogo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bitter:wght@500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/output.css" />
+</head>
+<body class="bg-cream text-slate-800 antialiased">
+  <header id="site-header" data-variant="solid"></header>
+
+  <main class="mx-auto max-w-3xl px-6 py-12">
+    <a href="/berita.html" class="text-sm font-semibold text-primary-dark hover:text-accent">Kembali ke daftar berita</a>
+    <article id="artikel" class="mt-6"><p class="text-slate-500">Memuat berita...</p></article>
+  </main>
+
+  <section class="border-t border-ink/10 bg-white py-12">
+    <div class="mx-auto max-w-7xl px-6">
+      <h2 class="text-2xl font-bold text-ink">Berita lainnya</h2>
+      <div id="lain" class="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3"></div>
+    </div>
+  </section>
+
+  <div id="lightbox" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/85 p-4" role="dialog" aria-label="Foto diperbesar">
+    <img id="lightbox-img" alt="" class="max-h-full max-w-full rounded-lg" />
+  </div>
+
+  <footer id="site-footer"></footer>
+  <script src="/js/layout.js"></script>
+  <script>
+    (async function () {
+      const { esc, tanggal, cardBerita } = window.BK;
+      const id = new URLSearchParams(location.search).get('id');
+      const box = document.getElementById('artikel');
+      try {
+        const r = await fetch('/api/berita/' + encodeURIComponent(id || ''));
+        if (!r.ok) throw new Error();
+        const b = await r.json();
+        document.title = b.judul + ' | Bakesbangpol Kabupaten Ponorogo';
+        const paragraf = esc(b.isi).split(/\n{2,}/)
+          .map((p) => `<p class="mb-5">${p.replace(/\n/g, '<br>')}</p>`).join('');
+        box.innerHTML = `
+          <p class="text-sm font-semibold text-primary-dark">${esc(b.kategori)}</p>
+          <h1 class="mt-2 text-3xl font-bold leading-tight text-ink md:text-4xl">${esc(b.judul)}</h1>
+          <p class="mt-3 text-sm text-slate-500">${tanggal(b.tanggal)}</p>
+          ${b.gambar ? `<img src="${esc(b.gambar)}" alt="" class="mt-6 w-full rounded-xl object-cover">` : ''}
+          <div class="mt-8 text-lg leading-relaxed text-slate-700">${paragraf}</div>
+          ${(b.galeri && b.galeri.length) ? `
+            <h2 class="mt-10 text-xl font-bold text-ink">Galeri foto</h2>
+            <div class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+              ${b.galeri.map((src, i) => `<button type="button" data-src="${esc(src)}" class="overflow-hidden rounded-lg"><img src="${esc(src)}" alt="Foto ${i + 1} dari berita" loading="lazy" class="h-36 w-full object-cover transition hover:scale-105"></button>`).join('')}
+            </div>` : ''}`;
+      } catch {
+        box.innerHTML = '<h1 class="text-3xl font-bold text-ink">Berita tidak ditemukan</h1><p class="mt-3 text-slate-600">Berita ini mungkin sudah dihapus. Lihat berita lain di <a class="font-semibold text-accent underline" href="/berita.html">daftar berita</a>.</p>';
+      }
+
+            const lb = document.getElementById('lightbox');
+      box.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-src]');
+        if (!btn) return;
+        document.getElementById('lightbox-img').src = btn.dataset.src;
+        lb.classList.remove('hidden');
+        lb.classList.add('flex');
+      });
+      lb.addEventListener('click', () => { lb.classList.add('hidden'); lb.classList.remove('flex'); });
+      document.addEventListener('keydown', (e) => { if (e.key === 'Escape') lb.click(); });
+
+      try {
+        const d = await fetch('/api/berita?limit=4').then((r) => r.json());
+        const lain = d.items.filter((b) => b.id !== id).slice(0, 3);
+        document.getElementById('lain').innerHTML = lain.map((b) => cardBerita(b)).join('');
+      } catch {}
+    })();
+  </script>
+</body>
+</html>

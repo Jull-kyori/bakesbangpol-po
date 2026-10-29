@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BAKESBANGPOL Kabupaten Ponorogo</title>
+  <meta name="description" content="Website resmi Badan Kesatuan Bangsa dan Politik (Bakesbangpol) Kabupaten Ponorogo." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bitter:wght@500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/output.css" />
+</head>
+<body class="bg-cream text-slate-800 antialiased">
+
+  <header id="site-header" data-variant="overlay"></header>
+
+  <main>
+  <!-- HERO -->
+  <section class="hero-fan relative flex min-h-[88vh] items-center overflow-hidden">
+    <!-- Slide foto berita (diisi otomatis oleh script di bawah) -->
+    <div id="hero-slides" class="absolute inset-0" aria-hidden="true"></div>
+    <!-- Lapisan gelap supaya teks tetap terbaca di atas foto -->
+    <div class="absolute inset-0 bg-linear-to-r from-ink via-ink/70 to-ink/20"></div>
+    <div class="absolute inset-x-0 top-0 h-36 bg-linear-to-b from-ink/80 to-transparent"></div>
+    <div class="relative mx-auto w-full max-w-7xl px-6 pb-24 pt-28">
+      <h1 class="max-w-3xl text-4xl font-bold leading-tight text-white md:text-6xl">Badan Kesatuan Bangsa dan Politik Kabupaten Ponorogo</h1>
+      <p class="mt-5 max-w-xl text-lg text-white/85">Menjaga persatuan, kewaspadaan, dan kehidupan demokrasi yang harmonis di Bumi Reog.</p>
+      <div class="mt-8 flex flex-wrap gap-3">
+        <a href="/berita.html" class="rounded-full bg-primary px-7 py-3 font-semibold text-ink transition hover:bg-accent hover:text-white">Baca berita terbaru</a>
+        <a href="#bidang" class="rounded-full border border-white/40 px-7 py-3 font-semibold text-white transition hover:bg-white/10">Kenali bidang kami</a>
+      </div>
+    </div>
+
+    <!-- Judul berita pada slide aktif + titik navigasi -->
+    <div id="hero-caption" class="absolute bottom-20 right-6 z-10 hidden max-w-xs md:block"></div>
+  </section>
+
+  <!-- AKSES CEPAT -->
+  <section class="relative z-10 -mt-14 px-6" aria-label="Akses cepat">
+    <div class="mx-auto grid max-w-6xl gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <a href="/berita.html?q=SAKIP" class="group rounded-xl bg-white p-5 shadow-lg shadow-ink/10 ring-1 ring-ink/5 transition hover:bg-primary">
+        <svg class="h-8 w-8 text-accent group-hover:text-ink" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/></svg>
+        <p class="mt-3 font-display text-base font-bold text-ink">SAKIP</p>
+        <p class="mt-1 text-sm text-slate-600 group-hover:text-ink">Dokumen akuntabilitas kinerja</p>
+      </a>
+      <a href="/berita.html?q=Laporan+Kinerja" class="group rounded-xl bg-white p-5 shadow-lg shadow-ink/10 ring-1 ring-ink/5 transition hover:bg-primary">
+        <svg class="h-8 w-8 text-accent group-hover:text-ink" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/></svg>
+        <p class="mt-3 font-display text-base font-bold text-ink">Laporan Kinerja</p>
+        <p class="mt-1 text-sm text-slate-600 group-hover:text-ink">LKj dan peninjauan kinerja</p>
+      </a>
+      <a href="#struktur" class="group rounded-xl bg-white p-5 shadow-lg shadow-ink/10 ring-1 ring-ink/5 transition hover:bg-primary">
+        <svg class="h-8 w-8 text-accent group-hover:text-ink" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="5" r="2.5"/><circle cx="5" cy="19" r="2.5"/><circle cx="19" cy="19" r="2.5"/><path d="M12 7.5V12M12 12H5v4.5M12 12h7v4.5"/></svg>
+        <p class="mt-3 font-display text-base font-bold text-ink">Struktur Organisasi</p>
+        <p class="mt-1 text-sm text-slate-600 group-hover:text-ink">Pejabat dan staf per bidang</p>
+      </a>
+      <a href="#kontak" class="group rounded-xl bg-white p-5 shadow-lg shadow-ink/10 ring-1 ring-ink/5 transition hover:bg-primary">
+        <svg class="h-8 w-8 text-accent group-hover:text-ink" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>
+        <p class="mt-3 font-display text-base font-bold text-ink">Kontak</p>
+        <p class="mt-1 text-sm text-slate-600 group-hover:text-ink">Alamat dan layanan</p>
+      </a>
+    </div>
+  </section>
+
+  <!-- PROFIL -->
+  <section id="profil" class="mx-auto max-w-7xl px-6 py-20">
+    <div class="grid items-center gap-10 md:grid-cols-2">
+      <img src="/assets/img/kantor.jpg" alt="Kantor Bakesbangpol Kabupaten Ponorogo" class="h-80 w-full rounded-xl bg-primary/20 object-cover" onerror="this.removeAttribute('src')" />
+      <div>
+        <h2 class="text-3xl font-bold text-ink md:text-4xl">Tentang Bakesbangpol</h2>
+        <p class="mt-5 max-w-prose leading-relaxed text-slate-700">Badan Kesatuan Bangsa dan Politik (Bakesbangpol) Kabupaten Ponorogo adalah perangkat daerah yang menyelenggarakan urusan pemerintahan bidang kesatuan bangsa dan politik. Struktur organisasinya berdasarkan Peraturan Bupati Ponorogo Nomor 12 Tahun 2023, terdiri dari Sekretariat dan tiga bidang.</p>
+        <a href="#bidang" class="mt-6 inline-block rounded-full bg-accent px-6 py-3 text-sm font-semibold text-white transition hover:bg-primary-dark">Lihat bidang kami</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ANGKA -->
+  <section id="angka" class="bg-primary py-14 text-ink" aria-label="Angka ringkas">
+    <div class="mx-auto grid max-w-7xl grid-cols-2 gap-8 px-6 text-center lg:grid-cols-4">
+      <div class="stat">
+        <p class="font-display text-4xl font-bold md:text-5xl"><span data-count="4">4</span></p>
+        <p class="mt-1 text-sm font-medium">Unit kerja: Sekretariat dan 3 bidang</p>
+      </div>
+      <div class="stat" id="stat-pegawai">
+        <p class="font-display text-4xl font-bold md:text-5xl"><span data-count="0">0</span></p>
+        <p class="mt-1 text-sm font-medium">Pejabat dan staf dalam struktur</p>
+      </div>
+      <div class="stat" id="stat-berita">
+        <p class="font-display text-4xl font-bold md:text-5xl"><span data-count="0">0</span></p>
+        <p class="mt-1 text-sm font-medium">Berita diterbitkan</p>
+      </div>
+      <div class="stat" id="stat-idi">
+        <p class="font-display text-4xl font-bold md:text-5xl"><span data-count="0" data-decimals="2">0</span>%</p>
+        <p class="mt-1 text-sm font-medium">Skor IDI Kabupaten Ponorogo</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- BERITA TERBARU -->
+  <section id="berita" class="bg-white py-20">
+    <div class="mx-auto max-w-7xl px-6">
+      <div class="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h2 class="text-3xl font-bold text-ink md:text-4xl">Berita terbaru</h2>
+          <p class="mt-2 text-slate-600">Kegiatan dan informasi dari Bakesbangpol.</p>
+        </div>
+        <a href="/berita.html" class="text-sm font-semibold text-accent underline underline-offset-4 hover:text-primary-dark">Lihat semua berita</a>
+      </div>
+      <div id="berita-tabs" class="mt-6 flex flex-wrap gap-2" role="tablist" aria-label="Kategori berita"></div>
+      <div id="berita-list" class="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3" aria-live="polite">
+        <p class="text-slate-500">Memuat berita...</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- BIDANG -->
+  <section id="bidang" class="bg-ink py-20">
+    <div class="mx-auto max-w-7xl px-6">
+      <h2 class="text-3xl font-bold text-white md:text-4xl">Sekretariat dan bidang</h2>
+      <p class="mt-2 max-w-2xl text-white/75">Empat unit kerja yang menjalankan tugas Bakesbangpol.</p>
+
+      <div class="mt-10 grid gap-6 md:grid-cols-2">
+
+        <article id="bidang-sekretariat" class="group relative overflow-hidden rounded-xl border border-white/10 bg-white/5 p-6 pl-8 transition hover:-translate-y-1 hover:bg-white/10 target:ring-2 target:ring-primary">
+          <span class="absolute inset-y-0 left-0 w-1.5 origin-top scale-y-50 bg-primary transition-transform duration-300 group-hover:scale-y-100"></span>
+          <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/15 text-primary transition group-hover:bg-primary group-hover:text-ink">
+            <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5M10 13h6M10 17h6"/></svg>
+          </span>
+          <h3 class="mt-4 text-xl font-bold text-white">Sekretariat</h3>
+          <p class="mt-3 leading-relaxed text-white/80">Mengelola administrasi umum, kepegawaian, keuangan, perencanaan, dan pelaporan kinerja badan.</p>
+          <a href="/berita.html?kategori=Sekretariat" class="mt-4 inline-block text-sm font-semibold text-primary transition hover:translate-x-1 hover:text-white">Berita bidang ini</a>
+        </article>
+
+        <article id="bidang-ideologi" class="group relative overflow-hidden rounded-xl border border-white/10 bg-white/5 p-6 pl-8 transition hover:-translate-y-1 hover:bg-white/10 target:ring-2 target:ring-primary">
+          <span class="absolute inset-y-0 left-0 w-1.5 origin-top scale-y-50 bg-primary transition-transform duration-300 group-hover:scale-y-100"></span>
+          <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/15 text-primary transition group-hover:bg-primary group-hover:text-ink">
+            <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 21V4M5 4h11l-2 4 2 4H5"/></svg>
+          </span>
+          <h3 class="mt-4 text-xl font-bold text-white">Ideologi, Wawasan Kebangsaan dan Ketahanan Ekonomi, Sosial, Budaya, Agama</h3>
+          <p class="mt-3 leading-relaxed text-white/80">Pembinaan ideologi Pancasila, wawasan kebangsaan, serta ketahanan di bidang ekonomi, sosial, budaya, dan agama.</p>
+          <a href="/berita.html?kategori=Ideologi%20%26%20Wawasan%20Kebangsaan" class="mt-4 inline-block text-sm font-semibold text-primary transition hover:translate-x-1 hover:text-white">Berita bidang ini</a>
+        </article>
+
+        <article id="bidang-politik" class="group relative overflow-hidden rounded-xl border border-white/10 bg-white/5 p-6 pl-8 transition hover:-translate-y-1 hover:bg-white/10 target:ring-2 target:ring-primary">
+          <span class="absolute inset-y-0 left-0 w-1.5 origin-top scale-y-50 bg-primary transition-transform duration-300 group-hover:scale-y-100"></span>
+          <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/15 text-primary transition group-hover:bg-primary group-hover:text-ink">
+            <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6M16 4.5a3.5 3.5 0 010 7M18 14.2c2 .7 3.5 2.5 3.5 5.8"/></svg>
+          </span>
+          <h3 class="mt-4 text-xl font-bold text-white">Politik Dalam Negeri dan Organisasi Kemasyarakatan</h3>
+          <p class="mt-3 leading-relaxed text-white/80">Fasilitasi kehidupan demokrasi dan politik daerah, serta pembinaan dan pengawasan organisasi kemasyarakatan.</p>
+          <a href="/berita.html?kategori=Politik%20Dalam%20Negeri%20%26%20Ormas" class="mt-4 inline-block text-sm font-semibold text-primary transition hover:translate-x-1 hover:text-white">Berita bidang ini</a>
+        </article>
+
+        <article id="bidang-kewaspadaan" class="group relative overflow-hidden rounded-xl border border-white/10 bg-white/5 p-6 pl-8 transition hover:-translate-y-1 hover:bg-white/10 target:ring-2 target:ring-primary">
+          <span class="absolute inset-y-0 left-0 w-1.5 origin-top scale-y-50 bg-primary transition-transform duration-300 group-hover:scale-y-100"></span>
+          <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/15 text-primary transition group-hover:bg-primary group-hover:text-ink">
+            <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.2 8-8 9-4.8-1-8-4.5-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg>
+          </span>
+          <h3 class="mt-4 text-xl font-bold text-white">Kewaspadaan Nasional dan Penanganan Konflik</h3>
+          <p class="mt-3 leading-relaxed text-white/80">Deteksi dini kerawanan sosial dan ancaman daerah, pemantauan orang asing dan tenaga kerja asing, serta penanganan konflik sosial.</p>
+          <a href="/berita.html?kategori=Kewaspadaan%20Nasional" class="mt-4 inline-block text-sm font-semibold text-primary transition hover:translate-x-1 hover:text-white">Berita bidang ini</a>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- E-IDI -->
+  <section id="idi-teaser" class="bg-white py-20">
+    <div class="mx-auto grid max-w-7xl items-center gap-10 px-6 lg:grid-cols-2">
+      <div>
+        <h2 class="text-3xl font-bold text-ink md:text-4xl">E-IDI Ponorogo</h2>
+        <p class="mt-4 max-w-prose leading-relaxed text-slate-700">Dashboard Indeks Demokrasi Indonesia (IDI) Kabupaten Ponorogo: pemantauan, pengukuran, dan transparansi tata kelola demokrasi daerah berbasis data empiris.</p>
+        <a href="/idi.html" class="mt-6 inline-block rounded-full bg-accent px-6 py-3 text-sm font-semibold text-white transition hover:bg-primary-dark">Buka dashboard E-IDI</a>
+      </div>
+      <div class="rounded-2xl bg-cream p-6 ring-1 ring-ink/10">
+        <div class="flex items-end justify-between gap-4">
+          <div>
+            <p class="text-sm text-slate-600">Skor IDI <span id="idi-tahun"></span></p>
+            <p id="idi-skor" class="font-display text-5xl font-bold text-ink">-</p>
+          </div>
+          <span id="idi-kat" class="rounded-full px-3 py-1 text-sm font-bold"></span>
+        </div>
+        <div id="idi-bars" class="mt-6 space-y-4"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STRUKTUR -->
+  <section id="struktur" class="py-20">
+    <div class="mx-auto max-w-7xl px-6">
+      <h2 class="text-3xl font-bold text-ink md:text-4xl">Struktur organisasi</h2>
+      <p class="mt-2 text-slate-600">Berdasarkan Peraturan Bupati Ponorogo Nomor 12 Tahun 2023.</p>
+
+      <div class="mt-10 flex flex-col items-center">
+        <div class="w-full max-w-sm rounded-xl bg-ink p-6 text-center text-white">
+          <div class="mx-auto h-20 w-20 rounded-full bg-primary/30"></div>
+          <p class="mt-4 text-sm text-primary">Kepala Badan</p>
+          <p class="mt-1 font-semibold">Dra. Besse Tenrisampeang, M.Si.</p>
+        </div>
+        <div class="h-8 w-px bg-primary-dark" aria-hidden="true"></div>
+      </div>
+
+      <div class="grid items-start gap-5 md:grid-cols-2 xl:grid-cols-4">
+
+        <article class="rounded-xl bg-white p-5 ring-1 ring-ink/10">
+          <div class="rounded-lg bg-primary p-4 text-ink">
+            <p class="text-sm font-semibold">Sekretaris</p>
+            <p class="mt-3 font-semibold">Bambang Windusancoyo, S.Sos.</p>
+          </div>
+          <details class="mt-4">
+            <summary class="cursor-pointer text-sm font-semibold text-accent">Lihat staf Sekretariat (7)</summary>
+            <ul class="mt-3 space-y-3">
+              <li><p class="text-sm font-semibold text-ink">Rini Listyowati, S.H.</p><p class="text-sm text-slate-500">Perencana Ahli Muda</p></li>
+              <li><p class="text-sm font-semibold text-ink">Lestari Dewi Utami, S.H.</p><p class="text-sm text-slate-500">Analis Keuangan Pemerintah Pusat &amp; Daerah Ahli Muda</p></li>
+              <li><p class="text-sm font-semibold text-ink">Lilik Mariyani, S.Sos.</p><p class="text-sm text-slate-500">Penelaah Teknis Kebijakan</p></li>
+              <li><p class="text-sm font-semibold text-ink">Mailani Sa&#x27;adah, S.E.I.</p><p class="text-sm text-slate-500">Arsiparis Ahli Pertama</p></li>
+              <li><p class="text-sm font-semibold text-ink">Nidia Sukmawati Rahardi, S.Ak.</p><p class="text-sm text-slate-500">Pengolah Data dan Informasi</p></li>
+              <li><p class="text-sm font-semibold text-ink">Sumono</p><p class="text-sm text-slate-500">Pengadministrasi Perkantoran</p></li>
+              <li><p class="text-sm font-semibold text-ink">Sumarni</p><p class="text-sm text-slate-500">Pengadministrasi Perkantoran</p></li>
+            </ul>
+          </details>
+          <div class="mt-4 border-t border-ink/10 pt-4">
+            <p class="text-sm font-semibold text-primary-dark">Kasubbag Umum dan Kepegawaian</p>
+            <details class="mt-2">
+              <summary class="cursor-pointer text-sm font-semibold text-accent">Lihat staf (5)</summary>
+              <ul class="mt-3 space-y-3">
+              <li><p class="text-sm font-semibold text-ink">Dadang Praminto</p><p class="text-sm text-slate-500">Pengadministrasi Perkantoran</p></li>
+              <li><p class="text-sm font-semibold text-ink">Suparman</p><p class="text-sm text-slate-500">Pengadministrasi Perkantoran</p></li>
+              <li><p class="text-sm font-semibold text-ink">Suyatno</p><p class="text-sm text-slate-500">Pengadministrasi Perkantoran</p></li>
+              <li><p class="text-sm font-semibold text-ink">Sarwono</p><p class="text-sm text-slate-500">Operator Layanan Operasional</p></li>
+              <li><p class="text-sm font-semibold text-ink">Affan Abror Ubaidillah</p><p class="text-sm text-slate-500">Operator Layanan Operasional</p></li>
+              </ul>
+            </details>
+          </div>
+        </article>
+        <article class="rounded-xl bg-white p-5 ring-1 ring-ink/10">
+          <div class="rounded-lg bg-ink p-4 text-white">
+            <p class="text-sm text-primary">Kepala Bidang</p>
+            <p class="mt-1 text-sm text-white/80">Politik Dalam Negeri dan Organisasi Kemasyarakatan</p>
+            <p class="mt-3 font-semibold">Jajak Aris Pambudi, S.STP., M.Si.</p>
+          </div>
+          <details class="mt-4">
+            <summary class="cursor-pointer text-sm font-semibold text-accent">Lihat staf (5)</summary>
+            <ul class="mt-3 space-y-3">
+              <li><p class="text-sm font-semibold text-ink">Suswaningsih, S.Sos., M.Si.</p><p class="text-sm text-slate-500">Analis Kebijakan Ahli Muda</p></li>
+              <li><p class="text-sm font-semibold text-ink">Endi Budijanto, S.Sos.</p><p class="text-sm text-slate-500">Analis Kebijakan Ahli Muda</p></li>
+              <li><p class="text-sm font-semibold text-ink">Ermadi Soeryantoro, S.Sos.</p><p class="text-sm text-slate-500">Penelaah Teknis Kebijakan</p></li>
+              <li><p class="text-sm font-semibold text-ink">Wildana Al Faruqi, S.IAN.</p><p class="text-sm text-slate-500">Penelaah Teknis Kebijakan</p></li>
+              <li><p class="text-sm font-semibold text-ink">Imam Wiyono, S.Pd.</p><p class="text-sm text-slate-500">Pengadministrasi Perkantoran</p></li>
+            </ul>
+          </details>
+        </article>
+        <article class="rounded-xl bg-white p-5 ring-1 ring-ink/10">
+          <div class="rounded-lg bg-ink p-4 text-white">
+            <p class="text-sm text-primary">Kepala Bidang</p>
+            <p class="mt-1 text-sm text-white/80">Kewaspadaan Nasional dan Penanganan Konflik</p>
+            <p class="mt-3 font-semibold">Wimphi Christianto, S.STP.</p>
+          </div>
+          <details class="mt-4">
+            <summary class="cursor-pointer text-sm font-semibold text-accent">Lihat staf (4)</summary>
+            <ul class="mt-3 space-y-3">
+              <li><p class="text-sm font-semibold text-ink">Anies Triana, S.Sos., M.Si.</p><p class="text-sm text-slate-500">Analis Kebijakan Ahli Muda</p></li>
+              <li><p class="text-sm font-semibold text-ink">Heru Gatut Saputro</p><p class="text-sm text-slate-500">Pengadministrasi Perkantoran</p></li>
+              <li><p class="text-sm font-semibold text-ink">Sunarti</p><p class="text-sm text-slate-500">Pengolah Data dan Informasi</p></li>
+              <li><p class="text-sm font-semibold text-ink">Aditya Khoirul Anam, A.Md.</p><p class="text-sm text-slate-500">Pranata Komputer Terampil</p></li>
+            </ul>
+          </details>
+        </article>
+        <article class="rounded-xl bg-white p-5 ring-1 ring-ink/10">
+          <div class="rounded-lg bg-ink p-4 text-white">
+            <p class="text-sm text-primary">Kepala Bidang</p>
+            <p class="mt-1 text-sm text-white/80">Ideologi, Wawasan Kebangsaan dan Ketahanan Ekonomi, Sosial, Budaya, Agama</p>
+            <p class="mt-3 font-semibold">Bambang Hermawan, S.E.</p>
+          </div>
+          <details class="mt-4">
+            <summary class="cursor-pointer text-sm font-semibold text-accent">Lihat staf (4)</summary>
+            <ul class="mt-3 space-y-3">
+              <li><p class="text-sm font-semibold text-ink">Rizqi Azhar Irwansyah, S.E., M.M.</p><p class="text-sm text-slate-500">Analis Kebijakan Ahli Muda</p></li>
+              <li><p class="text-sm font-semibold text-ink">Angga Chrisdana, S.Sos.</p><p class="text-sm text-slate-500">Penelaah Teknis Kebijakan</p></li>
+              <li><p class="text-sm font-semibold text-ink">Rudi Kristanto</p><p class="text-sm text-slate-500">Pengadministrasi Perkantoran</p></li>
+              <li><p class="text-sm font-semibold text-ink">Sepvina Dwi Santoso, A.Md.Kom.</p><p class="text-sm text-slate-500">Pranata Komputer Terampil</p></li>
+            </ul>
+          </details>
+        </article>
+      </div>
+    </div>
+  </section>
+  </main>
+
+  <footer id="site-footer"></footer>
+
+  <script src="/js/layout.js"></script>
+  <script src="/js/home.js"></script>
+    <script>
+    (async function () {
+      const wrap = document.getElementById('hero-slides');
+      const cap = document.getElementById('hero-caption');
+      try {
+        const d = await fetch('/api/berita?limit=10').then((r) => r.json());
+        const slides = d.items.filter((b) => b.gambar).slice(0, 5);
+        if (!slides.length) return; // tidak ada foto: pakai kipas CSS
+
+        const { esc } = window.BK;
+        wrap.innerHTML = slides.map((b, i) =>
+          `<img src="${esc(b.gambar)}" alt="" class="absolute inset-0 h-full w-full object-cover transition-opacity duration-1000 ${i === 0 ? 'opacity-100' : 'opacity-0'}">`
+        ).join('');
+        const imgs = wrap.querySelectorAll('img');
+        let cur = 0, timer;
+
+        function caption() {
+          const b = slides[cur];
+          cap.classList.remove('hidden');
+          cap.innerHTML = `
+            <p class="text-sm text-white/70">Berita terbaru</p>
+            <a href="/berita-detail.html?id=${encodeURIComponent(b.id)}" class="mt-1 block font-display text-base font-bold leading-snug text-white hover:text-primary">${esc(b.judul)}</a>
+            <div class="mt-3 flex gap-2">
+              ${slides.map((_, i) => `<button type="button" data-i="${i}" aria-label="Slide ${i + 1}" class="h-2 rounded-full transition-all ${i === cur ? 'w-6 bg-primary' : 'w-2 bg-white/50 hover:bg-white'}"></button>`).join('')}
+            </div>`;
+        }
+
+        function go(i) {
+          imgs[cur].classList.replace('opacity-100', 'opacity-0');
+          cur = i;
+          imgs[cur].classList.replace('opacity-0', 'opacity-100');
+          caption();
+        }
+
+        function start() {
+          clearInterval(timer);
+          const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+          if (slides.length > 1 && !reduce) timer = setInterval(() => go((cur + 1) % slides.length), 5000);
+        }
+
+        cap.addEventListener('click', (e) => {
+          const b = e.target.closest('[data-i]');
+          if (b) { go(+b.dataset.i); start(); }
+        });
+
+        caption();
+        start();
+      } catch (e) { console.error('Slideshow gagal:', e); } 
+    })();
+  </script>
+</body>
+</html>
