@@ -3,6 +3,7 @@
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g,
     (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const form = $('#form');
+  const documentationForm = $('#dokumentasi-form');
   let editingId = null;
   let page = 1;
 
@@ -45,8 +46,10 @@
 
   async function loadKategori() {
     const k = await api('/api/kategori');
-    $('#kategori').innerHTML = '<option value="">Pilih kategori</option>' +
+    const options = '<option value="">Pilih kategori</option>' +
       k.map((x) => `<option>${esc(x)}</option>`).join('');
+    $('#kategori').innerHTML = options;
+    $('#dokumentasi-kategori').innerHTML = options;
   }
 
   async function loadList() {
@@ -130,6 +133,63 @@
       ? 'Kunci AI terpasang di server. Status asisten dapat diubah di sini.'
       : 'Kunci AI belum dikonfigurasi. Asisten hanya dapat menampilkan panduan lokal sampai pengelola server mengatur GROQ_API_KEY.';
   }
+
+  async function loadDocumentation() {
+    const data = await api('/api/admin/dokumentasi');
+    $('#dokumentasi-total').textContent = '(' + data.total + ')';
+    $('#dokumentasi-admin-list').innerHTML = data.items.length ? data.items.map((item) => `
+      <li class="flex min-w-0 items-center gap-3 rounded-xl bg-white p-3 ring-1 ring-ink/10">
+        <img src="${esc(item.gambar)}" alt="" class="h-16 w-16 shrink-0 rounded-lg object-cover">
+        <div class="min-w-0 flex-1">
+          <p class="line-clamp-2 text-sm font-semibold text-ink">${esc(item.judul)}</p>
+          <p class="mt-1 text-xs text-slate-500">${esc(item.kategori)} · ${esc(item.tanggal)}</p>
+        </div>
+        <button type="button" data-delete-documentation="${esc(item.id)}" aria-label="Hapus dokumentasi: ${esc(item.judul)}" class="shrink-0 rounded-lg px-3 py-1.5 text-sm font-semibold text-red-700 ring-1 ring-red-300 hover:bg-red-50">Hapus</button>
+      </li>`).join('') :
+      '<li class="rounded-xl bg-white p-5 text-sm text-slate-500 ring-1 ring-ink/10 sm:col-span-2">Belum ada foto dokumentasi.</li>';
+    if (window.FX) window.FX.reveal($('#dokumentasi-admin-list').children);
+  }
+
+  documentationForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const button = $('#dokumentasi-submit');
+    const feedback = $('#dokumentasi-feedback');
+    let saved = false;
+    button.disabled = true;
+    feedback.textContent = 'Mengunggah...';
+    feedback.className = 'text-sm text-slate-600';
+    try {
+      await api('/api/admin/dokumentasi', {
+        method: 'POST',
+        body: new FormData(documentationForm)
+      });
+      saved = true;
+      documentationForm.reset();
+      $('#dokumentasi-tanggal').value = today();
+      feedback.textContent = 'Dokumentasi berhasil diunggah.';
+      feedback.className = 'text-sm font-semibold text-green-800';
+    } catch (error) {
+      feedback.textContent = error.message;
+      feedback.className = 'text-sm font-semibold text-red-700';
+    } finally {
+      button.disabled = false;
+    }
+    if (saved) loadDocumentation().catch((error) => toast(error.message, false));
+  });
+
+  $('#dokumentasi-admin-list').addEventListener('click', async (event) => {
+    const button = event.target.closest('[data-delete-documentation]');
+    if (!button || !confirm('Hapus foto dokumentasi ini?')) return;
+    button.disabled = true;
+    try {
+      await api('/api/admin/dokumentasi/' + encodeURIComponent(button.dataset.deleteDocumentation), { method: 'DELETE' });
+      toast('Dokumentasi dihapus.', true);
+      loadDocumentation().catch((error) => toast(error.message, false));
+    } catch (error) {
+      button.disabled = false;
+      toast(error.message, false);
+    }
+  });
 
   $('#site-settings-form').addEventListener('submit', async (event) => {
     event.preventDefault();
@@ -288,6 +348,8 @@
       await loadList();
       await loadModeration();
       await loadSiteSettings();
+      $('#dokumentasi-tanggal').value = today();
+      await loadDocumentation();
     } catch (e) {
       if (!location.pathname.endsWith('/login.html')) toast(e.message, false);
     }

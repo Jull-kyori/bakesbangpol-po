@@ -112,6 +112,21 @@ for (const [key, { raw, value }] of Object.entries(sources)) {
   process.stdout.write(`${key}: ${summary}, SHA-256 ${digest}\n`);
 }
 
+function legacyDocumentation(items) {
+  return items.flatMap((item) => [
+    ...(item.galeri || []),
+    ...(item.gambar ? [item.gambar] : [])
+  ].map((gambar, index) => ({
+    id: `berita-${item.id}-${index + 1}`,
+    judul: item.judul,
+    kategori: item.kategori,
+    tanggal: item.tanggal,
+    keterangan: '',
+    gambar,
+    createdAt: item.createdAt || new Date(`${item.tanggal}T00:00:00.000Z`).toISOString()
+  }))).sort((a, b) => b.tanggal.localeCompare(a.tanggal) || b.id.localeCompare(a.id));
+}
+
 if (!process.argv.includes('--apply')) {
   process.stdout.write('Dry-run saja. Data tidak ditulis. Tambahkan --apply untuk mengimpor ke PostgreSQL.\n');
   process.exit(0);
@@ -139,6 +154,12 @@ async function main() {
         [key, JSON.stringify(source.value)]
       );
     }
+    await client.query(
+      `UPDATE app_state
+       SET value = $1::jsonb, updated_at = NOW()
+       WHERE key = 'dokumentasi' AND value = '[]'::jsonb`,
+      [JSON.stringify(legacyDocumentation(news))]
+    );
     await client.query('COMMIT');
     process.stdout.write('Data berhasil diimpor ke PostgreSQL.\n');
   } catch (error) {

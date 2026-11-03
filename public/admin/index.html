@@ -12,10 +12,11 @@
     <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-6 py-4">
       <div>
         <p class="text-xs font-semibold uppercase tracking-wider text-primary">Panel administrasi</p>
-        <h1 class="font-display text-lg font-bold">Berita &amp; komentar</h1>
+        <h1 class="font-display text-lg font-bold">Berita, dokumentasi &amp; komentar</h1>
       </div>
     <nav aria-label="Navigasi admin" class="flex flex-wrap items-center justify-end gap-3 text-xs sm:gap-4 sm:text-sm">
       <a href="/admin/" aria-current="page" class="hover:text-primary">Berita &amp; komentar</a>
+      <a href="/admin/#dokumentasi" class="hover:text-primary">Dokumentasi</a>
       <a href="/admin/#pengaturan" class="hover:text-primary">Pengaturan situs</a>
       <a href="/" target="_blank" rel="noopener noreferrer" class="hover:text-primary">Lihat website</a>
       <button id="logout" type="button" class="rounded-lg bg-white/10 px-3 py-1.5 font-semibold hover:bg-white/20">Keluar</button>
@@ -85,6 +86,49 @@
       <div id="pager" class="mt-6 flex flex-wrap gap-2"></div>
     </section>
   </main>
+
+  <section id="dokumentasi" class="mx-auto max-w-6xl px-6 pb-12" data-reveal>
+    <div class="mb-5">
+      <p class="text-sm font-bold uppercase tracking-wider text-accent">Galeri publik</p>
+      <h2 class="mt-1 text-2xl font-bold text-ink">Kelola dokumentasi kegiatan</h2>
+      <p class="mt-1 text-sm text-slate-600">Foto yang ditambahkan di sini akan tampil pada galeri dokumentasi di beranda.</p>
+    </div>
+    <div class="grid items-start gap-8 lg:grid-cols-[0.8fr_1.2fr]">
+      <form id="dokumentasi-form" class="space-y-4 rounded-xl bg-white p-6 ring-1 ring-ink/10">
+        <h3 class="text-lg font-bold text-ink">Tambah foto dokumentasi</h3>
+        <div>
+          <label for="dokumentasi-judul" class="text-sm font-semibold text-ink">Judul</label>
+          <input id="dokumentasi-judul" name="judul" required minlength="5" maxlength="200" class="mt-1 w-full rounded-lg border border-ink/20 px-3 py-2" />
+        </div>
+        <div class="grid gap-3 sm:grid-cols-2">
+          <div>
+            <label for="dokumentasi-kategori" class="text-sm font-semibold text-ink">Bidang</label>
+            <select id="dokumentasi-kategori" name="kategori" required class="mt-1 w-full rounded-lg border border-ink/20 bg-white px-3 py-2"></select>
+          </div>
+          <div>
+            <label for="dokumentasi-tanggal" class="text-sm font-semibold text-ink">Tanggal kegiatan</label>
+            <input id="dokumentasi-tanggal" name="tanggal" type="date" required class="mt-1 w-full rounded-lg border border-ink/20 px-3 py-2" />
+          </div>
+        </div>
+        <div>
+          <label for="dokumentasi-gambar" class="text-sm font-semibold text-ink">Foto (JPG, PNG, WebP; maks. 3 MB)</label>
+          <input id="dokumentasi-gambar" name="gambar" type="file" accept="image/jpeg,image/png,image/webp" required class="mt-1 w-full text-sm" />
+        </div>
+        <div>
+          <label for="dokumentasi-keterangan" class="text-sm font-semibold text-ink">Keterangan (opsional)</label>
+          <textarea id="dokumentasi-keterangan" name="keterangan" rows="3" maxlength="500" class="mt-1 w-full rounded-lg border border-ink/20 px-3 py-2"></textarea>
+        </div>
+        <div class="flex flex-wrap items-center gap-3">
+          <button id="dokumentasi-submit" type="submit" class="rounded-lg bg-primary px-5 py-2.5 font-semibold text-ink hover:bg-accent hover:text-white">Unggah dokumentasi</button>
+          <span id="dokumentasi-feedback" class="text-sm" role="status" aria-live="polite"></span>
+        </div>
+      </form>
+      <div>
+        <h3 class="text-lg font-bold text-ink">Foto tersimpan <span id="dokumentasi-total" class="text-base font-normal text-slate-500"></span></h3>
+        <ul id="dokumentasi-admin-list" class="mt-4 grid gap-3 sm:grid-cols-2"></ul>
+      </div>
+    </div>
+  </section>
 
   <section id="pengaturan" class="mx-auto max-w-6xl px-6 pb-12">
     <div class="rounded-xl bg-white p-6 ring-1 ring-ink/10 sm:p-8" data-reveal>

@@ -68,20 +68,46 @@
   </section>
 
   <!-- PROFIL -->
-  <section id="profil" class="mx-auto max-w-7xl px-6 py-20">
-    <div class="grid items-center gap-10 md:grid-cols-2">
-      <img src="/assets/img/kantor.jpg" alt="Kantor Bakesbangpol Kabupaten Ponorogo" loading="lazy" decoding="async" class="h-80 w-full rounded-xl bg-primary/20 object-cover" onerror="this.removeAttribute('src')" />
-      <div>
-        <h2 class="text-3xl font-bold text-ink md:text-4xl">Tentang Bakesbangpol</h2>
-        <p class="mt-5 max-w-prose leading-relaxed text-slate-700">Badan Kesatuan Bangsa dan Politik (Bakesbangpol) Kabupaten Ponorogo adalah perangkat daerah yang menyelenggarakan urusan pemerintahan bidang kesatuan bangsa dan politik. Struktur organisasinya berdasarkan Peraturan Bupati Ponorogo Nomor 12 Tahun 2023, terdiri dari Sekretariat dan tiga bidang.</p>
-        <a href="#bidang" class="mt-6 inline-block rounded-full bg-accent px-6 py-3 text-sm font-semibold text-white transition hover:bg-primary-dark">Lihat bidang kami</a>
+  <section id="profil" class="overflow-hidden py-20">
+    <div class="mx-auto grid max-w-7xl items-center gap-12 px-6 lg:grid-cols-[1.05fr_0.95fr]">
+      <div class="relative">
+        <div class="absolute -left-8 -top-8 h-40 w-40 rounded-full bg-primary/30" aria-hidden="true"></div>
+        <img src="/assets/img/kantor.jpg" alt="Kantor Bakesbangpol Kabupaten Ponorogo" loading="lazy" decoding="async" class="relative h-80 w-full rounded-2xl object-cover shadow-xl shadow-ink/10 sm:h-[26rem]" onerror="this.removeAttribute('src')" />
+        <div class="absolute -bottom-5 right-4 max-w-xs rounded-xl bg-ink px-5 py-4 text-white shadow-xl sm:right-8">
+          <p class="text-xs font-semibold uppercase tracking-[0.15em] text-primary">Pemerintah Kabupaten Ponorogo</p>
+          <p class="mt-1 font-display text-lg font-bold">Merawat persatuan dalam keberagaman</p>
+        </div>
+      </div>
+      <div class="pt-4 lg:pl-4">
+        <p class="text-sm font-bold uppercase tracking-[0.18em] text-accent">Kenali peran kami</p>
+        <h2 class="mt-3 text-3xl font-bold leading-tight text-ink md:text-4xl">Tentang Bakesbangpol</h2>
+        <p class="mt-5 leading-relaxed text-slate-700">Badan Kesatuan Bangsa dan Politik (Bakesbangpol) Kabupaten Ponorogo adalah perangkat daerah yang menyelenggarakan urusan pemerintahan bidang kesatuan bangsa dan politik. Bersama Sekretariat dan tiga bidang, Bakesbangpol mengelola urusan yang mendukung kehidupan kebangsaan dan politik daerah.</p>
+        <p class="mt-4 leading-relaxed text-slate-700">Susunan organisasi berpedoman pada Peraturan Bupati Ponorogo Nomor 12 Tahun 2023. Kenali ruang lingkup kerja dan dokumentasi kegiatan kami melalui halaman ini.</p>
+        <div class="mt-7 grid gap-3 sm:grid-cols-3">
+          <article class="rounded-xl bg-white p-4 ring-1 ring-ink/10">
+            <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/20 text-primary-dark" aria-hidden="true">01</span>
+            <h3 class="mt-3 text-sm font-bold text-ink">Wawasan kebangsaan</h3>
+            <p class="mt-1 text-xs leading-relaxed text-slate-600">Ideologi, persatuan, dan ketahanan sosial budaya.</p>
+          </article>
+          <article class="rounded-xl bg-white p-4 ring-1 ring-ink/10">
+            <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/20 text-primary-dark" aria-hidden="true">02</span>
+            <h3 class="mt-3 text-sm font-bold text-ink">Politik dan ormas</h3>
+            <p class="mt-1 text-xs leading-relaxed text-slate-600">Politik dalam negeri dan organisasi kemasyarakatan.</p>
+          </article>
+          <article class="rounded-xl bg-white p-4 ring-1 ring-ink/10">
+            <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/20 text-primary-dark" aria-hidden="true">03</span>
+            <h3 class="mt-3 text-sm font-bold text-ink">Kewaspadaan</h3>
+            <p class="mt-1 text-xs leading-relaxed text-slate-600">Kewaspadaan nasional dan penanganan konflik.</p>
+          </article>
+        </div>
+        <a href="#bidang" class="mt-7 inline-flex items-center gap-2 rounded-full bg-accent px-6 py-3 text-sm font-semibold text-white transition hover:bg-primary-dark">Jelajahi bidang kami <span aria-hidden="true">→</span></a>
       </div>
     </div>
   </section>
 
   <!-- ANGKA -->
   <section id="angka" class="bg-primary py-14 text-ink" aria-label="Angka ringkas">
-    <div class="mx-auto grid max-w-7xl grid-cols-2 gap-8 px-6 text-center lg:grid-cols-3">
+    <div class="mx-auto grid max-w-7xl grid-cols-2 gap-8 px-6 text-center sm:grid-cols-4">
       <div class="stat">
         <p class="font-display text-4xl font-bold md:text-5xl"><span data-count="4">4</span></p>
         <p class="mt-1 text-sm font-medium">Unit kerja: Sekretariat dan 3 bidang</p>
@@ -93,6 +119,10 @@
       <div class="stat" id="stat-berita">
         <p class="font-display text-4xl font-bold md:text-5xl"><span data-count="0">0</span></p>
         <p class="mt-1 text-sm font-medium">Berita diterbitkan</p>
+      </div>
+      <div class="stat" id="stat-dokumentasi">
+        <p class="font-display text-4xl font-bold md:text-5xl"><span data-count="0">0</span></p>
+        <p class="mt-1 text-sm font-medium">Foto dokumentasi kegiatan</p>
       </div>
     </div>
   </section>
@@ -111,6 +141,25 @@
       <div id="berita-list" class="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3" aria-live="polite">
         <p class="text-slate-500">Memuat berita...</p>
       </div>
+    </div>
+  </section>
+
+  <!-- DOKUMENTASI KEGIATAN -->
+  <section id="dokumentasi" class="overflow-hidden bg-cream py-20">
+    <div class="mx-auto max-w-7xl px-6">
+      <div class="flex flex-wrap items-end justify-between gap-5">
+        <div>
+          <p class="text-sm font-bold uppercase tracking-[0.18em] text-accent">Cerita dalam gambar</p>
+          <h2 class="mt-2 font-display text-3xl font-bold text-ink md:text-4xl">Dokumentasi kegiatan</h2>
+          <p class="mt-2 max-w-2xl text-slate-600">Lihat kembali kegiatan dan momen Bakesbangpol Kabupaten Ponorogo.</p>
+        </div>
+        <a href="/berita.html" class="text-sm font-semibold text-accent underline underline-offset-4 hover:text-primary-dark">Jelajahi berita</a>
+      </div>
+      <div id="dokumentasi-tabs" class="mt-7 flex flex-wrap gap-2" role="tablist" aria-label="Filter dokumentasi"></div>
+      <div id="dokumentasi-list" class="mt-7 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" aria-live="polite" aria-busy="true">
+        <p class="col-span-full rounded-xl bg-white p-8 text-center text-slate-600">Memuat dokumentasi...</p>
+      </div>
+      <button id="dokumentasi-more" type="button" hidden class="mx-auto mt-8 rounded-full bg-ink px-6 py-3 text-sm font-semibold text-white transition hover:bg-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent motion-reduce:transition-none">Muat dokumentasi lainnya</button>
     </div>
   </section>
 
@@ -267,6 +316,18 @@
     </div>
   </section>
   </main>
+
+  <dialog id="dokumentasi-dialog" aria-labelledby="dokumentasi-dialog-title" class="m-auto w-[min(90vw,56rem)] max-w-none overflow-hidden rounded-2xl bg-white p-0 text-ink shadow-2xl backdrop:bg-ink/80">
+    <div class="flex items-start justify-between gap-4 p-5 sm:p-6">
+      <div>
+        <p id="dokumentasi-dialog-meta" class="text-sm font-semibold text-accent"></p>
+        <h2 id="dokumentasi-dialog-title" class="mt-1 text-xl font-bold sm:text-2xl"></h2>
+        <p id="dokumentasi-dialog-caption" class="mt-2 max-w-3xl text-sm leading-relaxed text-slate-600"></p>
+      </div>
+      <button id="dokumentasi-dialog-close" type="button" class="shrink-0 rounded-full bg-cream px-4 py-2 text-sm font-semibold hover:bg-primary/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">Tutup</button>
+    </div>
+    <img id="dokumentasi-dialog-image" alt="" class="max-h-[70vh] w-full bg-ink object-contain" />
+  </dialog>
 
   <footer id="site-footer"></footer>
 

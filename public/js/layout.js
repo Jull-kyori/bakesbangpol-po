@@ -62,6 +62,7 @@
     ] },
     { t: 'Berita', h: '/berita.html', spy: 'berita', sub: [['Semua berita', '/berita.html']].concat(
       KATEGORI.map((k) => [k, '/berita.html?kategori=' + encodeURIComponent(k)])) },
+    { t: 'Dokumentasi', h: '/#dokumentasi', spy: 'dokumentasi' },
     { t: 'Paskibraka BPIP', h: 'https://paskibraka.bpip.go.id/', external: true },
     { t: 'Aspirasi', h: '/aspirasi.html' },
     { t: 'Kontak', h: '#kontak' }
@@ -205,6 +206,7 @@
             <li><a class="hover:text-primary" href="/#bidang">Bidang</a></li>
             <li><a class="hover:text-primary" href="/#struktur">Struktur organisasi</a></li>
             <li><a class="hover:text-primary" href="/berita.html">Berita</a></li>
+            <li><a class="hover:text-primary" href="/#dokumentasi">Dokumentasi kegiatan</a></li>
             <li><a class="hover:text-primary" href="/aspirasi.html">Panduan aspirasi/pengaduan</a></li>
             <li><a class="hover:text-primary" href="/kebijakan.html">Aturan komentar &amp; privasi</a></li>
           </ul>

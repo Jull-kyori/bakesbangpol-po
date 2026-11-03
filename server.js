@@ -256,6 +256,28 @@ function uploadImage(req, res, next) {
     res.status(400).json({ error: msg });
   });
 }
+function uploadDocumentationImage(req, res, next) {
+  upload.single('gambar')(req, res, (error) => {
+    if (error) {
+      if (req.file) removeUpload('/uploads/' + req.file.filename);
+      const message = error.code === 'LIMIT_FILE_SIZE'
+        ? 'Ukuran foto maksimal 3 MB.'
+        : error.message;
+      return res.status(400).json({ error: message });
+    }
+    if (!req.file) return res.status(400).json({ error: 'Pilih foto dokumentasi terlebih dahulu.' });
+    try {
+      if (!hasExpectedFileSignature(req.file)) {
+        removeUpload('/uploads/' + req.file.filename);
+        return res.status(400).json({ error: 'Isi file tidak sesuai dengan format gambar yang dipilih.' });
+      }
+    } catch (verificationError) {
+      removeUpload('/uploads/' + req.file.filename);
+      return next(verificationError);
+    }
+    next();
+  });
+}
 const coverFile = (req) => ((req.files || {}).gambar || [])[0];
 const galleryFiles = (req) => (req.files || {}).galeri || [];
 const discardUploads = (req) =>
@@ -275,6 +297,22 @@ function validate(body) {
   if (!KATEGORI.includes(kategori)) errors.push('Pilih kategori berita.');
   if (isi.length < 20) errors.push('Isi berita minimal 20 karakter.');
   return { judul, kategori, isi, tanggal, errors };
+}
+function validateDocumentation(body) {
+  const errors = [];
+  const judul = typeof body.judul === 'string' ? body.judul.trim() : '';
+  const kategori = typeof body.kategori === 'string' ? body.kategori.trim() : '';
+  const tanggal = typeof body.tanggal === 'string' ? body.tanggal.trim() : '';
+  const keterangan = typeof body.keterangan === 'string' ? body.keterangan.trim() : '';
+  if (judul.length < 5 || judul.length > 200) errors.push('Judul dokumentasi harus terdiri dari 5 sampai 200 karakter.');
+  if (!KATEGORI.includes(kategori)) errors.push('Pilih bidang dokumentasi yang tersedia.');
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(tanggal) ||
+    Number.isNaN(Date.parse(`${tanggal}T00:00:00.000Z`)) ||
+    new Date(`${tanggal}T00:00:00.000Z`).toISOString().slice(0, 10) !== tanggal) {
+    errors.push('Tanggal dokumentasi tidak valid.');
+  }
+  if (keterangan.length > 500) errors.push('Keterangan maksimal 500 karakter.');
+  return { dokumentasi: { judul, kategori, tanggal, keterangan }, errors };
 }
 const toListItem = (b) => ({
   id: b.id, judul: b.judul, kategori: b.kategori, tanggal: b.tanggal, gambar: b.gambar,
@@ -555,6 +593,18 @@ app.post('/api/asisten', asyncRoute(async (req, res) => {
 
 // Publik: daftar & detail berita
 app.get('/api/kategori', (req, res) => res.json(KATEGORI));
+
+app.get('/api/dokumentasi', asyncRoute(async (req, res) => {
+  const kategori = String(req.query.kategori || '');
+  const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 50, 1), 100);
+  let items = (await readState(['dokumentasi'])).dokumentasi.slice().sort(sortDesc);
+  if (kategori) items = items.filter((item) => item.kategori === kategori);
+  const total = items.length;
+  const pages = Math.max(Math.ceil(total / limit), 1);
+  const page = Math.min(Math.max(parseInt(req.query.page, 10) || 1, 1), pages);
+  res.set('Cache-Control', 'no-store');
+  res.json({ items: items.slice((page - 1) * limit, page * limit), total, page, pages });
+}));
 
 app.get('/api/berita', asyncRoute(async (req, res) => {
   const kategori = String(req.query.kategori || '');
@@ -933,6 +983,46 @@ app.delete('/api/berita/:id', requireAdmin, asyncRoute(async (req, res) => {
   });
   removeUpload(removed.gambar);
   (removed.galeri || []).forEach(removeUpload);
+  res.json({ ok: true });
+}));
+
+app.get('/api/admin/dokumentasi', requireAdmin, asyncRoute(async (req, res) => {
+  const items = (await readState(['dokumentasi'])).dokumentasi.slice().sort(sortDesc);
+  res.json({ items, total: items.length });
+}));
+
+app.post('/api/admin/dokumentasi', requireAdmin, uploadDocumentationImage, asyncRoute(async (req, res) => {
+  const { dokumentasi, errors } = validateDocumentation(req.body || {});
+  if (errors.length) {
+    removeUpload('/uploads/' + req.file.filename);
+    return res.status(400).json({ error: errors.join(' ') });
+  }
+  const item = {
+    id: crypto.randomBytes(12).toString('hex'),
+    ...dokumentasi,
+    gambar: '/uploads/' + req.file.filename,
+    createdAt: new Date().toISOString()
+  };
+  try {
+    await updateState(['dokumentasi'], (state) => state.dokumentasi.push(item));
+  } catch (error) {
+    removeUpload(item.gambar);
+    throw error;
+  }
+  res.status(201).json(item);
+}));
+
+app.delete('/api/admin/dokumentasi/:id', requireAdmin, asyncRoute(async (req, res) => {
+  const removed = await updateState(['berita', 'dokumentasi'], (state) => {
+    const index = state.dokumentasi.findIndex((item) => item.id === req.params.id);
+    if (index < 0) throw httpError('Dokumentasi tidak ditemukan.', 404);
+    return state.dokumentasi.splice(index, 1)[0];
+  });
+  const { berita, dokumentasi } = await readState(['berita', 'dokumentasi']);
+  const photoIsStillUsed = berita.some((item) =>
+    item.gambar === removed.gambar || (item.galeri || []).includes(removed.gambar)) ||
+    dokumentasi.some((item) => item.gambar === removed.gambar);
+  if (!photoIsStillUsed) removeUpload(removed.gambar);
   res.json({ ok: true });
 }));
 
