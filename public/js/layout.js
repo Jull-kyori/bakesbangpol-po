@@ -62,7 +62,6 @@
     ] },
     { t: 'Berita', h: '/berita.html', spy: 'berita', sub: [['Semua berita', '/berita.html']].concat(
       KATEGORI.map((k) => [k, '/berita.html?kategori=' + encodeURIComponent(k)])) },
-    { t: 'E-IDI', h: '/idi.html', spy: 'idi-teaser' },
     { t: 'Paskibraka BPIP', h: 'https://paskibraka.bpip.go.id/', external: true },
     { t: 'Aspirasi', h: '/aspirasi.html' },
     { t: 'Kontak', h: '#kontak' }
@@ -266,7 +265,6 @@
           <div class="flex flex-wrap gap-2">
             <button type="button" data-tanya="Apa tugas Bakesbangpol?" class="rounded-full px-3 py-1.5 text-xs font-semibold text-primary-dark ring-1 ring-primary-dark/30 hover:bg-primary/15">Tugas Bakesbangpol</button>
             <button type="button" data-tanya="Informasi berita" class="rounded-full px-3 py-1.5 text-xs font-semibold text-primary-dark ring-1 ring-primary-dark/30 hover:bg-primary/15">Berita</button>
-            <button type="button" data-tanya="Apa itu E-IDI?" class="rounded-full px-3 py-1.5 text-xs font-semibold text-primary-dark ring-1 ring-primary-dark/30 hover:bg-primary/15">E-IDI</button>
           </div>
         </div>
         <form id="asisten-form" class="flex gap-2 border-t border-ink/10 p-3">
@@ -434,9 +432,6 @@
     if (/berita|kabar|artikel/.test(q)) {
       return 'Berita dan pengumuman dapat dibaca pada halaman Berita. Pilih menu Berita di bagian atas untuk melihat daftar dan kategori.';
     }
-    if (/idi|demokrasi/.test(q)) {
-      return 'E-IDI menampilkan informasi Indeks Demokrasi Indonesia, termasuk aspek, skor, dan tren. Buka menu E-IDI untuk melihat datanya.';
-    }
     if (/kontak|alamat|telepon|email|jam|hubungi/.test(q)) {
       const contact = [SITE.alamat, SITE.telepon, SITE.email, SITE.jam].filter(Boolean).join('; ');
       return contact
@@ -452,7 +447,7 @@
     if (/privasi|data pribadi|kebijakan|aturan komentar/.test(q)) {
       return 'Aturan komentar dan informasi data yang digunakan tersedia di halaman Kebijakan dan Privasi.';
     }
-    return 'Maaf, saya belum menemukan jawaban di panduan situs. Coba tanyakan tentang profil, bidang, berita, E-IDI, komentar, atau kontak.';
+    return 'Maaf, saya belum menemukan jawaban di panduan situs. Coba tanyakan tentang profil, bidang, berita, komentar, atau kontak.';
   }
   async function submitAssistant(question) {
     const value = question.trim();

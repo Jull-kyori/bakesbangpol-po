@@ -1,6 +1,6 @@
 # Website Bakesbangpol Kabupaten Ponorogo
 
-Website publik dan panel pengelola berbasis HTML, Tailwind CSS, dan Express. Fitur mencakup berita dan komentar, pengelolaan data E-IDI, serta asisten informasi yang dapat memakai Groq API. Data aplikasi disimpan dalam file JSON dan direktori unggahan; proyek ini belum memakai database.
+Website publik dan panel pengelola berita berbasis HTML, Tailwind CSS, Express, dan PostgreSQL. Fitur mencakup berita dan komentar serta asisten informasi yang dapat memakai Groq API. E-IDI bukan bagian dari layanan Bakesbangpol ini dan dikembangkan sebagai aplikasi terpisah di repository `bakesbangpol-ponorogo-idi`.
 
 ## Menjalankan secara lokal
 
@@ -14,6 +14,7 @@ Copy-Item .env.example .env
 Edit `.env` sebelum menjalankan server:
 
 - Ganti `ADMIN_PASSWORD` dengan password acak minimal 16 karakter.
+- Atur `DATABASE_URL` ke database PostgreSQL yang disediakan untuk aplikasi. Jangan masukkan kredensial database ke Git.
 - Atur `GROQ_API_KEY` jika ingin mengaktifkan jawaban generatif asisten. Jangan masukkan key ke kode, browser, atau Git.
 - Untuk pengembangan lokal melalui HTTP, `COOKIE_SECURE=false` dapat dipakai. Produksi wajib menggunakan HTTPS dan `COOKIE_SECURE=true`.
 
@@ -23,40 +24,42 @@ npm start
 
 - Situs: <http://localhost:3000>
 - Admin berita: <http://localhost:3000/admin/>
-- Admin E-IDI: <http://localhost:3000/admin/idi.html>
 
 `public/css/output.css` sudah dikompilasi. Jalankan `npm run css` setelah mengubah kelas Tailwind atau `src/input.css`.
 
-## Data dan penyimpanan
+## Database dan data
 
-- `data/berita.json` menyimpan berita publik.
-- `data/idi.json` menyimpan data E-IDI.
-- Pengaturan identitas/kontak, banner, dan status asisten disimpan di `data/site-settings.json` (diabaikan Git).
-- Komentar, reaksi, dan laporan disimpan di `data/komentar.json` (diabaikan Git).
-- Gambar berita dan dokumen E-IDI disimpan di `public/uploads/`.
-- `data/idi-audit.log` mencatat waktu, IP, tindakan, dan ringkasan perubahan E-IDI. File ini diabaikan Git; batasi akses dan tetapkan masa retensi sesuai kebijakan instansi.
+Data runtime disimpan di PostgreSQL pada tabel `app_state` sebagai dokumen JSONB terpisah untuk berita, komentar/reaksi/laporan, dan pengaturan situs. Penulisan tiap dokumen memakai transaksi serta row lock; penghapusan berita dan data komentar terkait dilakukan atomik. Skema berversi berada di `migrations/`.
 
-Cadangkan `data/` dan `public/uploads/` secara berkala ke media yang aksesnya dibatasi, dan uji pemulihan cadangan. Jangan mengunggah `.env`, backup berisi data pengguna, atau log audit ke repositori.
+JSON lama hanya menjadi sumber impor satu kali. Perintah impor default hanya melakukan dry-run dan tidak mengubah database. Gambar berita tetap disimpan di `public/uploads/`, terpisah dari database; gunakan disk persisten atau object storage yang disetujui. Cadangkan database dan unggahan, lalu uji pemulihannya. Jangan unggah `.env`, backup berisi data pengguna, atau log audit ke repositori.
 
-Admin dashboard menyediakan menu **Pengaturan situs** untuk identitas dan kontak, banner pengumuman, serta mengaktifkan atau menonaktifkan asisten AI. Pengaturan disimpan pada disk server; lakukan backup dan pastikan disk tetap persisten. Kunci Groq tidak ditampilkan atau diubah dari dashboard, melainkan dikelola oleh administrator server melalui `GROQ_API_KEY`.
+Admin dashboard menyediakan menu **Pengaturan situs** untuk identitas dan kontak, banner pengumuman, serta mengaktifkan atau menonaktifkan asisten AI. Kunci Groq tidak ditampilkan atau diubah dari dashboard, melainkan dikelola oleh administrator server melalui `GROQ_API_KEY`.
 
-Panel admin berita, pengaturan situs, dan E-IDI menggunakan sesi login yang sama dan saling terhubung melalui navigasi admin.
+Panel admin berita, komentar, dan pengaturan situs menggunakan sesi login yang sama. Pengelolaan E-IDI tidak tersedia di aplikasi ini.
 
-## Rencana tahap berikutnya: migrasi ke database
+### Menyiapkan skema dan mengimpor JSON
 
-Penyimpanan JSON saat ini sesuai untuk pengembangan lokal dan uji coba awal. Sebelum serah-terima dan deployment operasional kepada pihak Bakesbangpol, rencanakan migrasi ke database terkelola agar data lebih konsisten, mudah dicadangkan, dan siap dikembangkan. Pilihan produk database perlu ditentukan bersama pengelola infrastruktur instansi berdasarkan layanan yang tersedia, kebijakan keamanan, anggaran, dan kemampuan operasional; jangan mengasumsikan penyedia tertentu sebelum keputusan tersebut dibuat.
+1. Pastikan PostgreSQL dapat diakses melalui `DATABASE_URL`.
+2. Jalankan migrasi skema dan periksa bahwa perintah selesai tanpa error:
 
-Urutan pekerjaan yang disarankan:
+   ```powershell
+   npm run db:migrate
+   ```
+3. Pratinjau sumber lokal. Perintah ini menampilkan jumlah data dan checksum, tanpa menampilkan isi komentar:
 
-1. **Tentukan kebutuhan dan layanan** — sepakati penyedia/jenis database, lingkungan dev dan produksi, kepemilikan akun, lokasi data, retensi, backup, serta siapa yang bertanggung jawab mengoperasikannya.
-2. **Rancang skema dan pemetaan data** — susun tabel dan relasi untuk berita, kategori, komentar dan balasan, reaksi, laporan, pengaturan situs, indikator E-IDI, serta metadata dokumen; tetapkan batasan, indeks, dan kebijakan penghapusan.
-3. **Siapkan migrasi yang dapat diulang dan diverifikasi** — buat versi skema, alat impor JSON yang aman untuk dijalankan ulang, validasi jumlah dan keterkaitan data, serta laporan rekonsiliasi sebelum sumber data lama dihentikan.
-4. **Pindahkan akses data ke lapisan penyimpanan** — ganti pembacaan/penulisan JSON dengan repository atau layanan data yang konsisten, memakai transaksi untuk perubahan terkait dan validasi di server. Pertahankan kontrak API serta perilaku situs selama transisi.
-5. **Amankan koneksi dan kredensial** — simpan connection string sebagai secret lingkungan server, gunakan hak akses minimum, enkripsi koneksi, dan jangan masukkan kredensial ke Git atau browser.
-6. **Uji pemulihan dan operasional** — uji backup/restore, migrasi di staging, beban dan konkurensi, penanganan kegagalan, pemantauan, retensi log audit, serta prosedur rollback.
-7. **Lakukan cutover dengan persetujuan instansi** — ambil backup final, impor dan verifikasi data, alihkan aplikasi ke database, pantau hasilnya, lalu pertahankan sumber lama hanya sesuai masa retensi yang disepakati.
+   ```powershell
+   npm run db:import
+   ```
+4. Verifikasi sumber, jumlah, dan checksum. Impor hanya ke database kosong yang sudah dimigrasikan:
 
-Migrasi ini belum diterapkan. Sampai seluruh langkah selesai dan diverifikasi, batasan penyimpanan JSON yang dijelaskan di bagian deployment tetap berlaku. Berkas unggahan tetap perlu penyimpanan file persisten atau object storage yang disetujui; database tidak otomatis menyimpan file tersebut.
+   ```powershell
+   npm run db:import -- --apply
+   ```
+
+   Impor ditransaksikan, menolak database yang sudah berisi salah satu dokumen, dan tidak menimpa data. Sumber defaultnya adalah `data/berita.json`, `data/komentar.json`, dan `data/site-settings.json`; gunakan `--news-file`, `--comments-file`, atau `--settings-file` untuk jalur berbeda.
+5. Setelah impor berhasil, jalankan `npm start`. Server memerlukan ketiga dokumen tersedia di database dan akan gagal startup jika migrasi/impor belum dilakukan.
+
+JSON sumber tidak dihapus atau diubah. Data berita lokal yang ada ketika impor dijalankan akan ikut menjadi sumber awal. Tetapkan database staging/produksi, hak akses minimum, enkripsi koneksi, backup/restore, retensi, pemantauan, serta prosedur cutover bersama pengelola infrastruktur instansi.
 
 ## Persiapan sebelum serah-terima/publikasi
 
@@ -64,10 +67,9 @@ Konfirmasi dan isi bersama pihak Bakesbangpol:
 
 1. Logo, foto, alamat, telepon, email, jam layanan, profil, struktur pejabat, serta tautan kanal resmi.
 2. Berita contoh dan seluruh materi publik, termasuk hak penggunaan foto.
-3. Data, periode, rumus, sumber, dan dokumen pendukung E-IDI. Tren historis yang diberi label perlu verifikasi sumber jangan disajikan sebagai angka resmi sebelum sumbernya dikonfirmasi.
-4. Pengelola yang bertanggung jawab atas moderasi komentar, laporan, akun admin, backup, retensi log, dan permintaan penghapusan data.
-5. Persetujuan instansi atas pemrosesan pertanyaan chatbot oleh Groq dan penggunaan aset CDN eksternal yang dijelaskan pada halaman Kebijakan.
-6. Kebutuhan PPID dan tautan resminya. Halaman Aspirasi hanya mengarahkan ke kanal eksternal dan bukan sistem pengaduan tersimpan di situs.
+3. Pengelola yang bertanggung jawab atas moderasi komentar, laporan, akun admin, backup, retensi log, dan permintaan penghapusan data.
+4. Persetujuan instansi atas pemrosesan pertanyaan chatbot oleh Groq dan penggunaan aset CDN eksternal yang dijelaskan pada halaman Kebijakan.
+5. Kebutuhan PPID dan tautan resminya. Halaman Aspirasi hanya mengarahkan ke kanal eksternal dan bukan sistem pengaduan tersimpan di situs.
 
 ## Deploy dan batas operasional
 
@@ -75,10 +77,10 @@ Sebelum menjalankan `npm start` di produksi, atur `NODE_ENV=production`, `ADMIN_
 
 Tempatkan aplikasi di belakang HTTPS yang dikelola instansi. Bila menggunakan reverse proxy, set `TRUST_PROXY_HOPS` ke jumlah hop proxy yang tepercaya dan dikendalikan sendiri (misalnya `1` untuk satu proxy); jangan percaya header proxy dari klien langsung.
 
-Penyimpanan file JSON, sesi admin, pembatasan laju, dan percobaan login berada di disk lokal atau memori satu proses. Karena itu:
+Sesi admin, pembatasan laju, dan percobaan login masih berada di memori satu proses. Karena itu:
 
-- Gunakan satu instance aplikasi dan disk persisten. Restart mengakhiri sesi dan menghapus penghitung laju di memori.
-- Jangan menjalankan beberapa instance atau memakai filesystem sementara/ephemeral tanpa lebih dulu memindahkan data, sesi, dan rate limiter ke penyimpanan bersama yang sesuai.
+- Gunakan satu instance aplikasi. Restart mengakhiri sesi dan menghapus penghitung laju di memori; unggahan berita memerlukan disk persisten.
+- Jangan menjalankan beberapa instance sebelum sesi dan rate limiter dipindahkan ke penyimpanan bersama yang sesuai.
 - Implementasi ini memakai satu password admin bersama, tanpa akun per orang atau MFA. Tinjau kecukupannya untuk kebijakan keamanan instansi sebelum dibuka ke publik.
 - Tetapkan backup, retensi, akses log, pemantauan, dan prosedur pemulihan dengan pengelola sistem.
 
@@ -89,5 +91,8 @@ Komentar tidak memerlukan akun dan menunggu persetujuan admin. Pengunjung dapat 
 ## Perintah
 
 - `npm start` — menjalankan server.
+- `npm run db:migrate` — menerapkan migrasi skema PostgreSQL.
+- `npm run db:import` — validasi dan dry-run JSON tanpa mengubah database.
+- `npm run db:import -- --apply` — impor sumber JSON ke database kosong.
 - `npm run css` — membangun CSS minified.
 - `npm run dev:css` — memantau perubahan CSS Tailwind.

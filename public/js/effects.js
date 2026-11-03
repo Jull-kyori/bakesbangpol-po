@@ -63,7 +63,6 @@
     '#angka .stat',
     '#berita > div > div:first-child',
     '#bidang > div > h2, #bidang > div > p, #bidang article',
-    '#idi-teaser .grid > *',
     '#struktur > div > h2, #struktur > div > p, #struktur .flex.flex-col, #struktur article',
     'main > section',
     'main > section > article',
