@@ -22,6 +22,7 @@ const PUBLIC_DIR = path.join(__dirname, 'public');
 const UPLOAD_DIR = path.join(PUBLIC_DIR, 'uploads');
 const MAX_GALERI = 10;
 const { pool, readState, updateState, verifyState } = require('./lib/storage');
+const { remoteEnabled, removeImage, saveImage } = require('./lib/image-storage');
 const DEFAULT_SITE_SETTINGS = Object.freeze({
   brandName: 'BAKESBANGPOL',
   organizationName: 'Badan Kesatuan Bangsa dan Politik',
@@ -54,7 +55,7 @@ const KATEGORI = [
   'Kewaspadaan Nasional'
 ];
 
-fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+if (!process.env.VERCEL && !remoteEnabled) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 
 function readSiteSettings(saved) {
   if (!saved || typeof saved !== 'object' || Array.isArray(saved)) {
@@ -119,14 +120,6 @@ function validateSiteSettings(body) {
   }
   return { settings: { ...settings, announcementEnabled: body.announcementEnabled, assistantEnabled: body.assistantEnabled }, errors };
 }
-function removeUpload(gambar) {
-  if (typeof gambar === 'string' && gambar.startsWith('/uploads/')) {
-    fs.unlink(path.join(UPLOAD_DIR, path.basename(gambar)), (error) => {
-      if (error && error.code !== 'ENOENT') console.error(`[Upload] Gagal menghapus file: ${error.message}`);
-    });
-  }
-}
-
 // --- Komentar, reaksi, dan laporan ---
 function visitorKey(req, res) {
   let token = getCookie(req, 'visitor');
@@ -138,7 +131,36 @@ function visitorKey(req, res) {
   }
   return crypto.createHash('sha256').update(token).digest('hex');
 }
-function consumeLimit(limits, key, max, windowMs) {
+const limitScopes = new WeakMap();
+function createLimitMap(scope) {
+  const limits = new Map();
+  limitScopes.set(limits, scope);
+  return limits;
+}
+async function consumeLimit(limits, key, max, windowMs) {
+  if (process.env.VERCEL) {
+    const scope = limitScopes.get(limits);
+    if (!scope) throw new Error('Rate-limit scope is not configured.');
+    const bucketKey = crypto.createHash('sha256').update(`${scope}:${key}`).digest('hex');
+    const result = await pool.query(
+      `INSERT INTO rate_limit_buckets (bucket_key, count, reset_at)
+       VALUES ($1, 1, NOW() + ($2 * INTERVAL '1 millisecond'))
+       ON CONFLICT (bucket_key) DO UPDATE SET
+         count = CASE WHEN rate_limit_buckets.reset_at <= NOW() THEN 1 ELSE rate_limit_buckets.count + 1 END,
+         reset_at = CASE
+           WHEN rate_limit_buckets.reset_at <= NOW() THEN EXCLUDED.reset_at
+           ELSE rate_limit_buckets.reset_at
+         END
+       RETURNING count`,
+      [bucketKey, windowMs]
+    );
+    if (crypto.randomInt(100) === 0) {
+      pool.query('DELETE FROM rate_limit_buckets WHERE reset_at <= NOW()')
+        .catch((error) => console.error(`[PostgreSQL] Gagal membersihkan rate limit kedaluwarsa: ${error.message}`));
+    }
+    return Number(result.rows[0].count) <= max;
+  }
+
   const now = Date.now();
   if (limits.size > 10000) {
     for (const [entryKey, entry] of limits) {
@@ -154,9 +176,20 @@ function consumeLimit(limits, key, max, windowMs) {
   entry.count++;
   return true;
 }
-const commentLimits = new Map();
-const reportLimits = new Map();
-const reactionLimits = new Map();
+async function clearLimit(limits, key) {
+  if (process.env.VERCEL) {
+    const scope = limitScopes.get(limits);
+    if (!scope) throw new Error('Rate-limit scope is not configured.');
+    const bucketKey = crypto.createHash('sha256').update(`${scope}:${key}`).digest('hex');
+    await pool.query('DELETE FROM rate_limit_buckets WHERE bucket_key = $1', [bucketKey]);
+    return;
+  }
+  limits.delete(key);
+}
+const commentLimits = createLimitMap('comment');
+const reportLimits = createLimitMap('report');
+const reactionLimits = createLimitMap('reaction');
+const loginLimits = createLimitMap('login');
 function findComment(data, id) {
   return data.comments.find((item) => item.id === id && !item.deletedAt);
 }
@@ -175,9 +208,6 @@ function isPublishedComment(data, item) {
 }
 
 // --- Sesi & login ---
-const sessions = new Map();
-const attempts = new Map();
-
 function getCookie(req, name) {
   for (const part of (req.headers.cookie || '').split(';')) {
     const p = part.trim();
@@ -186,16 +216,21 @@ function getCookie(req, name) {
   }
   return null;
 }
-function isAdmin(req) {
+async function isAdmin(req) {
   const token = getCookie(req, 'sid');
-  const exp = token && sessions.get(token);
-  if (!exp) return false;
-  if (exp < Date.now()) { sessions.delete(token); return false; }
-  return true;
+  if (!/^[a-f0-9]{64}$/.test(token || '')) return false;
+  const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+  const result = await pool.query(
+    'SELECT 1 FROM admin_sessions WHERE token_hash = $1 AND expires_at > NOW()',
+    [tokenHash]
+  );
+  return result.rowCount > 0;
 }
 function requireAdmin(req, res, next) {
-  if (isAdmin(req)) return next();
-  res.status(401).json({ error: 'Sesi berakhir. Silakan masuk lagi.' });
+  isAdmin(req).then((valid) => {
+    if (valid) return next();
+    res.status(401).json({ error: 'Sesi berakhir. Silakan masuk lagi.' });
+  }).catch(next);
 }
 function safeEqual(a, b) {
   const ha = crypto.createHash('sha256').update(a).digest();
@@ -211,13 +246,18 @@ function cookie(value, maxAgeSec) {
 // --- Upload gambar ---
 const EXT = { 'image/jpeg': '.jpg', 'image/png': '.png', 'image/webp': '.webp' };
 function hasExpectedFileSignature(file) {
-  const descriptor = fs.openSync(file.path, 'r');
   const header = Buffer.alloc(12);
-  let bytesRead;
-  try {
-    bytesRead = fs.readSync(descriptor, header, 0, header.length, 0);
-  } finally {
-    fs.closeSync(descriptor);
+  let bytesRead = 0;
+  if (file.buffer) {
+    bytesRead = Math.min(file.buffer.length, header.length);
+    file.buffer.copy(header, 0, 0, bytesRead);
+  } else {
+    const descriptor = fs.openSync(file.path, 'r');
+    try {
+      bytesRead = fs.readSync(descriptor, header, 0, header.length, 0);
+    } finally {
+      fs.closeSync(descriptor);
+    }
   }
   if (file.mimetype === 'image/jpeg') return bytesRead >= 3 && header.subarray(0, 3).equals(Buffer.from([0xff, 0xd8, 0xff]));
   if (file.mimetype === 'image/png') return bytesRead >= 8 && header.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
@@ -225,7 +265,7 @@ function hasExpectedFileSignature(file) {
   return false;
 }
 const upload = multer({
-  storage: multer.diskStorage({
+  storage: process.env.VERCEL || remoteEnabled ? multer.memoryStorage() : multer.diskStorage({
     destination: (req, file, cb) => cb(null, UPLOAD_DIR),
     filename: (req, file, cb) => cb(null, crypto.randomBytes(12).toString('hex') + EXT[file.mimetype])
   }),
@@ -241,6 +281,11 @@ function uploadImage(req, res, next) {
     if (!err) {
       try {
         const files = [coverFile(req), ...galleryFiles(req)].filter(Boolean);
+        const totalSize = files.reduce((total, file) => total + file.size, 0);
+        if (process.env.VERCEL && totalSize > 4 * 1024 * 1024) {
+          discardUploads(req);
+          return res.status(413).json({ error: 'Total unggahan berita maksimal 4 MB di hosting Vercel. Unggah foto lebih sedikit atau perkecil ukuran file.' });
+        }
         if (!files.some((file) => !hasExpectedFileSignature(file))) return next();
         discardUploads(req);
         return res.status(400).json({ error: 'Isi file tidak sesuai dengan format gambar yang dipilih.' });
@@ -259,7 +304,7 @@ function uploadImage(req, res, next) {
 function uploadDocumentationImage(req, res, next) {
   upload.single('gambar')(req, res, (error) => {
     if (error) {
-      if (req.file) removeUpload('/uploads/' + req.file.filename);
+      discardFile(req.file);
       const message = error.code === 'LIMIT_FILE_SIZE'
         ? 'Ukuran foto maksimal 3 MB.'
         : error.message;
@@ -268,11 +313,11 @@ function uploadDocumentationImage(req, res, next) {
     if (!req.file) return res.status(400).json({ error: 'Pilih foto dokumentasi terlebih dahulu.' });
     try {
       if (!hasExpectedFileSignature(req.file)) {
-        removeUpload('/uploads/' + req.file.filename);
+        discardFile(req.file);
         return res.status(400).json({ error: 'Isi file tidak sesuai dengan format gambar yang dipilih.' });
       }
     } catch (verificationError) {
-      removeUpload('/uploads/' + req.file.filename);
+      discardFile(req.file);
       return next(verificationError);
     }
     next();
@@ -280,8 +325,42 @@ function uploadDocumentationImage(req, res, next) {
 }
 const coverFile = (req) => ((req.files || {}).gambar || [])[0];
 const galleryFiles = (req) => (req.files || {}).galeri || [];
+function discardFile(file) {
+  if (file && file.path) {
+    fs.unlink(file.path, (error) => {
+      if (error && error.code !== 'ENOENT') console.error(`[Upload] Gagal membersihkan file sementara: ${error.message}`);
+    });
+  }
+}
 const discardUploads = (req) =>
-  [coverFile(req), ...galleryFiles(req)].filter(Boolean).forEach((f) => removeUpload('/uploads/' + f.filename));
+  [coverFile(req), ...galleryFiles(req)].filter(Boolean).forEach(discardFile);
+async function saveUploadedFiles(files) {
+  const saved = [];
+  try {
+    for (const file of files) saved.push(await saveImage(file));
+    return saved;
+  } catch (error) {
+    await Promise.all(saved.map((image) => removeImage(image)));
+    throw error;
+  }
+}
+async function removeUploadedFiles(files) {
+  await Promise.all(files.filter(Boolean).map((image) => removeImage(image)));
+}
+async function removeImagesNoLongerUsed(images) {
+  if (!images.length) return;
+  try {
+    const { berita, dokumentasi } = await readState(['berita', 'dokumentasi']);
+    const used = new Set(dokumentasi.map((item) => item.gambar));
+    berita.forEach((item) => {
+      if (item.gambar) used.add(item.gambar);
+      (item.galeri || []).forEach((image) => used.add(image));
+    });
+    await removeUploadedFiles([...new Set(images)].filter((image) => !used.has(image)));
+  } catch (error) {
+    console.error(`[Upload] Tidak dapat memeriksa pemakaian foto lama; file dipertahankan: ${error.message}`);
+  }
+}
 
 // --- Validasi berita ---
 function validate(body) {
@@ -333,8 +412,10 @@ function httpError(message, status) {
 
 const app = express();
 app.disable('x-powered-by');
-if (process.env.TRUST_PROXY_HOPS) {
-  const trustProxyHops = Number(process.env.TRUST_PROXY_HOPS);
+const trustProxyHops = process.env.TRUST_PROXY_HOPS
+  ? Number(process.env.TRUST_PROXY_HOPS)
+  : process.env.VERCEL ? 1 : 0;
+if (process.env.TRUST_PROXY_HOPS || process.env.VERCEL) {
   if (!Number.isInteger(trustProxyHops) || trustProxyHops < 1 || trustProxyHops > 5) {
     throw new Error('TRUST_PROXY_HOPS must be an integer between 1 and 5.');
   }
@@ -351,39 +432,35 @@ app.use((req, res, next) => {
 app.use(express.json({ limit: '10kb' }));
 
 // Auth
-app.post('/api/login', (req, res) => {
+app.post('/api/login', asyncRoute(async (req, res) => {
   if (!ADMIN_PASSWORD) {
     return res.status(503).json({ error: 'Login admin belum dikonfigurasi oleh pengelola.' });
   }
-  const now = Date.now();
-  const ip = req.ip;
-  if (attempts.size > 10000) {
-    for (const [key, value] of attempts) {
-      if (value.reset <= now) attempts.delete(key);
-    }
+  if (!await consumeLimit(loginLimits, req.ip, 5, 15 * 60 * 1000)) {
+    return res.status(429).json({ error: 'Terlalu banyak percobaan. Coba lagi dalam 15 menit.' });
   }
-  let a = attempts.get(ip);
-  if (!a || a.reset < now) { a = { count: 0, reset: now + 15 * 60 * 1000 }; attempts.set(ip, a); }
-  if (a.count >= 5) return res.status(429).json({ error: 'Terlalu banyak percobaan. Coba lagi dalam 15 menit.' });
   const pw = String((req.body && req.body.password) || '');
-  if (!safeEqual(pw, ADMIN_PASSWORD)) { a.count++; return res.status(401).json({ error: 'Password salah.' }); }
-  attempts.delete(ip);
-  if (sessions.size > 1000) {
-    for (const [session, expiresAt] of sessions) {
-      if (expiresAt <= now) sessions.delete(session);
-    }
-  }
+  if (!safeEqual(pw, ADMIN_PASSWORD)) return res.status(401).json({ error: 'Password salah.' });
+  await clearLimit(loginLimits, req.ip);
   const token = crypto.randomBytes(32).toString('hex');
-  sessions.set(token, now + SESSION_MS);
+  const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+  await pool.query('DELETE FROM admin_sessions WHERE expires_at <= NOW()');
+  await pool.query(
+    'INSERT INTO admin_sessions (token_hash, expires_at) VALUES ($1, $2)',
+    [tokenHash, new Date(Date.now() + SESSION_MS)]
+  );
   res.setHeader('Set-Cookie', cookie(token, SESSION_MS / 1000));
   res.json({ ok: true });
-});
-app.post('/api/logout', (req, res) => {
+}));
+app.post('/api/logout', asyncRoute(async (req, res) => {
   const token = getCookie(req, 'sid');
-  if (token) sessions.delete(token);
+  if (/^[a-f0-9]{64}$/.test(token || '')) {
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    await pool.query('DELETE FROM admin_sessions WHERE token_hash = $1', [tokenHash]);
+  }
   res.setHeader('Set-Cookie', cookie('', 0));
   res.json({ ok: true });
-});
+}));
 app.get('/api/admin/me', requireAdmin, (req, res) => res.json({ ok: true }));
 app.get('/api/site-settings', asyncRoute(async (req, res) => {
   const { 'site-settings': saved } = await readState(['site-settings']);
@@ -405,7 +482,7 @@ app.put('/api/admin/site-settings', requireAdmin, asyncRoute(async (req, res) =>
 }));
 
 // Asisten AI: hanya mengirim satu pertanyaan ke model, tanpa menyimpan percakapan.
-const assistantBuckets = new Map();
+const assistantBuckets = createLimitMap('assistant');
 const assistantStopWords = new Set([
   'apa', 'apakah', 'bagaimana', 'berapa', 'bisa', 'dan', 'dari', 'di', 'dengan',
   'hal', 'ini', 'itu', 'ke', 'kapan', 'karena', 'mohon', 'pada', 'saya', 'siapa',
@@ -468,21 +545,8 @@ app.post('/api/asisten', asyncRoute(async (req, res) => {
   if (!readSiteSettings(savedSettings).assistantEnabled) {
     return res.status(503).json({ error: 'Asisten informasi sedang dinonaktifkan oleh pengelola situs.' });
   }
-  const now = Date.now();
-  const ip = req.ip;
-  let bucket = assistantBuckets.get(ip);
-  if (!bucket || bucket.resetAt <= now) {
-    bucket = { count: 0, resetAt: now + 60 * 1000 };
-    assistantBuckets.set(ip, bucket);
-  }
-  if (bucket.count >= 10) {
+  if (!await consumeLimit(assistantBuckets, req.ip, 10, 60 * 1000)) {
     return res.status(429).json({ error: 'Batas pertanyaan tercapai. Coba lagi sebentar.' });
-  }
-  bucket.count++;
-  if (assistantBuckets.size > 1000) {
-    for (const [key, value] of assistantBuckets) {
-      if (value.resetAt <= now) assistantBuckets.delete(key);
-    }
   }
 
   const question = String((req.body && req.body.question) || '').replace(/[\u0000-\u001f\u007f]/g, ' ').trim();
@@ -655,7 +719,7 @@ app.post('/api/berita/:id/komentar', asyncRoute(async (req, res) => {
   if (!berita.some((news) => news.id === newsId)) {
     return res.status(404).json({ error: 'Berita tidak ditemukan.' });
   }
-  if (!consumeLimit(commentLimits, req.ip, 5, 10 * 60 * 1000)) {
+  if (!await consumeLimit(commentLimits, req.ip, 5, 10 * 60 * 1000)) {
     return res.status(429).json({ error: 'Terlalu banyak komentar. Silakan coba lagi nanti.' });
   }
   const nama = String((req.body && req.body.nama) || '').trim();
@@ -704,7 +768,7 @@ app.post('/api/komentar/:id/reaksi', asyncRoute(async (req, res) => {
   if (!['suka', 'tidak-suka'].includes(value)) {
     return res.status(400).json({ error: 'Reaksi tidak valid.' });
   }
-  if (!consumeLimit(reactionLimits, req.ip, 60, 10 * 60 * 1000)) {
+  if (!await consumeLimit(reactionLimits, req.ip, 60, 10 * 60 * 1000)) {
     return res.status(429).json({ error: 'Terlalu banyak reaksi. Silakan coba lagi nanti.' });
   }
   const visitor = visitorKey(req, res);
@@ -734,7 +798,7 @@ app.post('/api/komentar/:id/laporan', asyncRoute(async (req, res) => {
     !initialState.berita.some((news) => news.id === initialItem.beritaId)) {
     return res.status(404).json({ error: 'Komentar tidak ditemukan.' });
   }
-  if (!consumeLimit(reportLimits, req.ip, 10, 10 * 60 * 1000)) {
+  if (!await consumeLimit(reportLimits, req.ip, 10, 10 * 60 * 1000)) {
     return res.status(429).json({ error: 'Terlalu banyak laporan. Silakan coba lagi nanti.' });
   }
   const reason = String((req.body && req.body.alasan) || '');
@@ -898,16 +962,21 @@ app.post('/api/berita', requireAdmin, uploadImage, asyncRoute(async (req, res) =
     return res.status(400).json({ error: v.errors.join(' ') });
   }
   const cover = coverFile(req);
-  const item = {
-    id: Date.now().toString(36) + crypto.randomBytes(2).toString('hex'),
-    judul: v.judul, kategori: v.kategori, tanggal: v.tanggal, isi: v.isi,
-    gambar: cover ? '/uploads/' + cover.filename : '',
-    galeri: galleryFiles(req).map((f) => '/uploads/' + f.filename),
-    createdAt: new Date().toISOString()
-  };
+  let uploadedImages = [];
+  let item;
   try {
+    uploadedImages = await saveUploadedFiles([cover, ...galleryFiles(req)].filter(Boolean));
+    let imageIndex = 0;
+    item = {
+      id: Date.now().toString(36) + crypto.randomBytes(2).toString('hex'),
+      judul: v.judul, kategori: v.kategori, tanggal: v.tanggal, isi: v.isi,
+      gambar: cover ? uploadedImages[imageIndex++] : '',
+      galeri: galleryFiles(req).map(() => uploadedImages[imageIndex++]),
+      createdAt: new Date().toISOString()
+    };
     await updateState(['berita'], (state) => state.berita.push(item));
   } catch (error) {
+    await removeUploadedFiles(uploadedImages);
     discardUploads(req);
     throw error;
   }
@@ -926,8 +995,13 @@ app.put('/api/berita/:id', requireAdmin, uploadImage, asyncRoute(async (req, res
     return res.status(400).json({ error: v.errors.join(' ') });
   }
   const oldUploads = [];
+  let uploadedImages = [];
   let updated;
   try {
+    const cover = coverFile(req);
+    uploadedImages = await saveUploadedFiles([cover, ...galleryFiles(req)].filter(Boolean));
+    const newCover = cover ? uploadedImages[0] : '';
+    const newGallery = uploadedImages.slice(cover ? 1 : 0);
     updated = await updateState(['berita'], (state) => {
       const idx = state.berita.findIndex((item) => item.id === req.params.id);
       if (idx === -1) throw httpError('Berita tidak ditemukan.', 404);
@@ -935,16 +1009,15 @@ app.put('/api/berita/:id', requireAdmin, uploadImage, asyncRoute(async (req, res
       const oldGaleri = old.galeri || [];
       const hapus = [].concat(req.body.hapus_galeri || []).filter((item) => oldGaleri.includes(item));
       const sisa = oldGaleri.filter((item) => !hapus.includes(item));
-      const baru = galleryFiles(req).map((file) => '/uploads/' + file.filename);
+      const baru = newGallery;
       if (sisa.length + baru.length > MAX_GALERI) {
         throw httpError(`Maksimal ${MAX_GALERI} foto galeri per berita.`, 400);
       }
       const removedGallery = oldGaleri.filter((item) => !sisa.includes(item));
       let gambar = old.gambar;
-      const cover = coverFile(req);
       if (cover) {
         if (old.gambar) oldUploads.push(old.gambar);
-        gambar = '/uploads/' + cover.filename;
+        gambar = newCover;
       } else if (req.body.hapus_gambar === 'on') {
         if (old.gambar) oldUploads.push(old.gambar);
         gambar = '';
@@ -962,10 +1035,11 @@ app.put('/api/berita/:id', requireAdmin, uploadImage, asyncRoute(async (req, res
       return state.berita[idx];
     });
   } catch (error) {
+    await removeUploadedFiles(uploadedImages);
     discardUploads(req);
     throw error;
   }
-  oldUploads.forEach(removeUpload);
+  await removeImagesNoLongerUsed(oldUploads);
   res.json(updated);
 }));
 
@@ -981,8 +1055,7 @@ app.delete('/api/berita/:id', requireAdmin, asyncRoute(async (req, res) => {
     state.komentar.reports = state.komentar.reports.filter((report) => report.beritaId !== req.params.id);
     return item;
   });
-  removeUpload(removed.gambar);
-  (removed.galeri || []).forEach(removeUpload);
+  await removeImagesNoLongerUsed([removed.gambar, ...(removed.galeri || [])]);
   res.json({ ok: true });
 }));
 
@@ -994,19 +1067,20 @@ app.get('/api/admin/dokumentasi', requireAdmin, asyncRoute(async (req, res) => {
 app.post('/api/admin/dokumentasi', requireAdmin, uploadDocumentationImage, asyncRoute(async (req, res) => {
   const { dokumentasi, errors } = validateDocumentation(req.body || {});
   if (errors.length) {
-    removeUpload('/uploads/' + req.file.filename);
+    discardFile(req.file);
     return res.status(400).json({ error: errors.join(' ') });
   }
+  const [gambar] = await saveUploadedFiles([req.file]);
   const item = {
     id: crypto.randomBytes(12).toString('hex'),
     ...dokumentasi,
-    gambar: '/uploads/' + req.file.filename,
+    gambar,
     createdAt: new Date().toISOString()
   };
   try {
     await updateState(['dokumentasi'], (state) => state.dokumentasi.push(item));
   } catch (error) {
-    removeUpload(item.gambar);
+    await removeUploadedFiles([item.gambar]);
     throw error;
   }
   res.status(201).json(item);
@@ -1018,11 +1092,7 @@ app.delete('/api/admin/dokumentasi/:id', requireAdmin, asyncRoute(async (req, re
     if (index < 0) throw httpError('Dokumentasi tidak ditemukan.', 404);
     return state.dokumentasi.splice(index, 1)[0];
   });
-  const { berita, dokumentasi } = await readState(['berita', 'dokumentasi']);
-  const photoIsStillUsed = berita.some((item) =>
-    item.gambar === removed.gambar || (item.galeri || []).includes(removed.gambar)) ||
-    dokumentasi.some((item) => item.gambar === removed.gambar);
-  if (!photoIsStillUsed) removeUpload(removed.gambar);
+  await removeImagesNoLongerUsed([removed.gambar]);
   res.json({ ok: true });
 }));
 
@@ -1043,11 +1113,15 @@ async function start() {
   app.listen(PORT, () => console.log(`Website listening on port ${PORT} (admin: /admin/)`));
 }
 
-start().catch((error) => {
-  console.error(`[Startup] ${error.message}`);
-  pool.end().catch((closeError) => {
-    console.error(`[PostgreSQL] Gagal menutup koneksi: ${closeError.message}`);
-  }).finally(() => {
-    process.exitCode = 1;
+if (require.main === module) {
+  start().catch((error) => {
+    console.error(`[Startup] ${error.message}`);
+    pool.end().catch((closeError) => {
+      console.error(`[PostgreSQL] Gagal menutup koneksi: ${closeError.message}`);
+    }).finally(() => {
+      process.exitCode = 1;
+    });
   });
-});
+}
+
+module.exports = app;
