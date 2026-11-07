@@ -48,11 +48,13 @@ const sources = {
     option('--settings-file', path.join(DATA_DIR, 'site-settings.json')),
     DEFAULT_SETTINGS,
     !process.argv.includes('--settings-file')
-  )
+  ),
+  struktur: readJson(option('--structure-file', path.join(DATA_DIR, 'struktur.json')))
 };
 const news = sources.berita.value;
 const comments = sources.komentar.value;
 const settings = sources['site-settings'].value;
+const structure = sources.struktur.value;
 
 if (!Array.isArray(news) || news.some((item) => !item || typeof item.id !== 'string')) {
   throw new Error('Data berita harus berupa array dengan ID berita yang valid.');
@@ -92,6 +94,30 @@ if (comments.reports.some((item) =>
 if (!settings || typeof settings !== 'object' || Array.isArray(settings)) {
   throw new Error('Pengaturan situs harus berupa object JSON.');
 }
+if (!structure || typeof structure !== 'object' ||
+  !Array.isArray(structure.sections) || !Array.isArray(structure.members)) {
+  throw new Error('Data struktur harus berisi array sections dan members.');
+}
+if (structure.sections.some((section) =>
+  !section || typeof section.id !== 'string' || typeof section.title !== 'string' ||
+  typeof section.description !== 'string')) {
+  throw new Error('Data bagian struktur memiliki format yang tidak valid.');
+}
+if (structure.members.some((member) =>
+  !member || typeof member.id !== 'string' || typeof member.sectionId !== 'string' ||
+  typeof member.name !== 'string' || typeof member.position !== 'string' ||
+  (member.photo !== '' && typeof member.photo !== 'string') ||
+  !Number.isInteger(member.order))) {
+  throw new Error('Data anggota struktur memiliki format yang tidak valid.');
+}
+if (new Set(structure.sections.map((section) => section.id)).size !== structure.sections.length ||
+  new Set(structure.members.map((member) => member.id)).size !== structure.members.length) {
+  throw new Error('Data struktur memuat ID yang duplikat.');
+}
+const structureSectionIds = new Set(structure.sections.map((section) => section.id));
+if (structure.members.some((member) => !structureSectionIds.has(member.sectionId))) {
+  throw new Error('Anggota struktur mengacu pada bagian yang tidak tersedia.');
+}
 for (const field of ['brandName', 'organizationName', 'district', 'address', 'phone', 'email', 'serviceHours', 'announcement']) {
   if (settings[field] !== undefined && typeof settings[field] !== 'string') {
     throw new Error(`Pengaturan ${field} harus berupa teks.`);
@@ -108,23 +134,10 @@ for (const [key, { raw, value }] of Object.entries(sources)) {
     ? `${value.length} berita`
     : key === 'komentar'
       ? `${value.comments.length} komentar, ${value.reactions.length} reaksi, ${value.reports.length} laporan`
-      : `${Object.keys(value).length} pengaturan`;
+      : key === 'struktur'
+        ? `${value.members.length} anggota, ${value.sections.length} bagian`
+        : `${Object.keys(value).length} pengaturan`;
   process.stdout.write(`${key}: ${summary}, SHA-256 ${digest}\n`);
-}
-
-function legacyDocumentation(items) {
-  return items.flatMap((item) => [
-    ...(item.galeri || []),
-    ...(item.gambar ? [item.gambar] : [])
-  ].map((gambar, index) => ({
-    id: `berita-${item.id}-${index + 1}`,
-    judul: item.judul,
-    kategori: item.kategori,
-    tanggal: item.tanggal,
-    keterangan: '',
-    gambar,
-    createdAt: item.createdAt || new Date(`${item.tanggal}T00:00:00.000Z`).toISOString()
-  }))).sort((a, b) => b.tanggal.localeCompare(a.tanggal) || b.id.localeCompare(a.id));
 }
 
 if (!process.argv.includes('--apply')) {
@@ -154,12 +167,6 @@ async function main() {
         [key, JSON.stringify(source.value)]
       );
     }
-    await client.query(
-      `UPDATE app_state
-       SET value = $1::jsonb, updated_at = NOW()
-       WHERE key = 'dokumentasi' AND value = '[]'::jsonb`,
-      [JSON.stringify(legacyDocumentation(news))]
-    );
     await client.query('COMMIT');
     process.stdout.write('Data berhasil diimpor ke PostgreSQL.\n');
   } catch (error) {

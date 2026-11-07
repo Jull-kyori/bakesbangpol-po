@@ -7,36 +7,124 @@
   <title>Masuk Admin | Bakesbangpol Ponorogo</title>
   <link rel="stylesheet" href="/css/output.css" />
 </head>
-<body class="flex min-h-screen items-center justify-center bg-cream px-6 text-slate-800 antialiased">
-  <main class="w-full max-w-sm rounded-xl bg-white p-8 ring-1 ring-ink/10" data-motion="enter">
-    <h1 class="text-2xl font-bold text-ink">Masuk admin</h1>
-    <p class="mt-1 text-sm text-slate-600">Khusus pengelola berita dan komentar Bakesbangpol.</p>
-    <form id="form" class="mt-6 space-y-4">
-      <div>
-        <label for="password" class="text-sm font-semibold text-ink">Password</label>
-        <input id="password" type="password" required autocomplete="current-password" class="mt-1 w-full rounded-lg border border-ink/20 px-4 py-2" />
+<body class="login-page min-h-screen text-slate-800 antialiased">
+  <main class="login-shell min-h-screen" data-motion="enter">
+    <section class="login-brand-panel relative flex flex-col justify-between overflow-hidden px-5 py-5 text-white sm:px-10 sm:py-8 lg:min-h-screen lg:px-12 lg:py-10 xl:px-16" aria-label="Informasi Bakesbangpol Ponorogo">
+      <div class="relative z-10 flex items-center gap-2.5 lg:gap-3">
+        <img src="/assets/img/logo.png" alt="" class="h-9 w-9 rounded-full bg-white/95 object-contain p-1 shadow-lg sm:h-11 sm:w-11" />
+        <div>
+          <p class="text-[0.6rem] font-bold uppercase tracking-[0.16em] text-white/75 sm:text-xs sm:tracking-[0.18em]">Pemerintah Kabupaten</p>
+          <p class="font-display text-base font-bold leading-tight sm:text-lg">BAKESBANGPOL</p>
+        </div>
       </div>
-      <p id="error" class="hidden text-sm font-semibold text-red-700" role="alert"></p>
-      <button class="w-full rounded-lg bg-primary px-4 py-2.5 font-semibold text-ink hover:bg-accent hover:text-white">Masuk</button>
-    </form>
+
+      <div class="relative z-10 my-5 max-w-xl sm:my-8 lg:my-0">
+        <p class="mb-2 text-[0.6rem] font-bold uppercase tracking-[0.18em] text-sky-100 sm:mb-4 sm:text-xs sm:tracking-[0.2em]">Panel administrasi</p>
+        <h1 class="font-display text-xl font-bold leading-tight sm:text-4xl xl:text-5xl">Mengelola informasi,<br class="hidden xl:block"> menjaga kepercayaan.</h1>
+        <p class="mt-2 max-w-lg text-xs leading-relaxed text-white/80 sm:mt-4 sm:text-base">Masuk untuk mengelola berita, dokumentasi, struktur organisasi, dan informasi Bakesbangpol Kabupaten Ponorogo.</p>
+      </div>
+
+      <p class="relative z-10 hidden text-xs text-white/60 lg:block">&copy; <span data-login-year></span> Bakesbangpol Kabupaten Ponorogo</p>
+      <div class="login-decoration login-decoration--one" aria-hidden="true"></div>
+      <div class="login-decoration login-decoration--two" aria-hidden="true"></div>
+    </section>
+
+    <section class="login-form-panel flex items-center justify-center px-5 py-6 sm:px-10 sm:py-8 lg:min-h-screen lg:px-12 lg:py-6 xl:px-16" aria-labelledby="welcome-title">
+      <div class="w-full max-w-md">
+        <a href="/" class="mb-5 inline-flex items-center gap-2 text-xs font-semibold text-primary-dark transition hover:text-accent sm:mb-8 sm:text-sm lg:hidden">
+          <span aria-hidden="true">&larr;</span> Kembali ke website
+        </a>
+        <p class="text-[0.65rem] font-bold uppercase tracking-[0.14em] text-primary-dark sm:text-sm">Area terbatas</p>
+        <h2 id="welcome-title" class="mt-1.5 font-display text-2xl font-bold tracking-tight text-ink sm:mt-2 sm:text-3xl">Selamat datang</h2>
+        <p class="mt-1.5 text-sm leading-relaxed text-slate-600 sm:mt-2 sm:text-base">Masuk menggunakan password admin untuk melanjutkan.</p>
+
+        <form id="form" class="mt-5 space-y-4 sm:mt-6">
+          <div>
+            <label for="password" class="text-sm font-semibold text-ink">Password</label>
+            <div class="login-field mt-2">
+              <svg class="h-5 w-5 shrink-0 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="15" r="4"/><path d="m10.8 12.2 8.7-8.7 2 2-2 2 1.5 1.5-2.2 2.2-1.5-1.5-3.7 3.7"/></svg>
+              <input id="password" name="password" type="password" required autocomplete="current-password" placeholder="Masukkan password" class="min-w-0 flex-1 border-0 bg-transparent text-sm text-ink outline-none placeholder:text-slate-400 focus-visible:outline-none" />
+              <button id="password-toggle" type="button" aria-label="Tampilkan password" aria-pressed="false" class="rounded-md p-1 text-slate-400 hover:text-primary-dark focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-dark">
+                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <p id="error" class="hidden rounded-lg bg-red-50 px-3 py-2.5 text-sm font-semibold text-red-700 ring-1 ring-red-200" role="alert"></p>
+          <button id="login-submit" class="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary-dark px-4 py-3 font-semibold text-white shadow-md transition hover:bg-accent disabled:cursor-wait disabled:opacity-80">
+            <svg id="login-spinner" class="hidden h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path fill="currentColor" d="M4 12a8 8 0 0 1 8-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+            <span id="login-submit-label">Masuk ke panel admin</span>
+          </button>
+        </form>
+
+        <p class="mt-4 text-center text-xs text-slate-500 sm:text-sm">Lupa password? Hubungi administrator sistem.</p>
+        <p class="mt-5 text-center text-[0.65rem] text-slate-400 lg:hidden">&copy; <span data-login-year></span> Bakesbangpol Kabupaten Ponorogo</p>
+      </div>
+    </section>
   </main>
+
+  <div id="login-loading" class="fixed inset-0 z-50 hidden items-center justify-center bg-ink/45 px-5 opacity-0 backdrop-blur-md transition-opacity duration-300" role="status" aria-live="polite" aria-hidden="true">
+    <div class="login-loading-card w-full max-w-sm rounded-2xl p-7 text-center sm:p-8">
+      <span class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 text-emerald-700" aria-hidden="true">
+        <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 4 4L19 6"/></svg>
+      </span>
+      <p class="mt-4 font-bold text-ink">Login berhasil</p>
+      <p class="mt-1 text-sm text-slate-600">Menyiapkan panel admin...</p>
+      <div class="login-progress-track mt-6" role="progressbar" aria-label="Memuat panel admin" aria-valuemin="0" aria-valuemax="100" aria-valuetext="Sedang menyiapkan panel admin">
+        <span class="login-progress-bar"></span>
+      </div>
+    </div>
+  </div>
+
   <script>
-    document.getElementById('form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const err = document.getElementById('error');
-      err.classList.add('hidden');
+    const submitButton = document.getElementById('login-submit');
+    const submitLabel = document.getElementById('login-submit-label');
+    const spinner = document.getElementById('login-spinner');
+    const loading = document.getElementById('login-loading');
+    const passwordInput = document.getElementById('password');
+    const passwordToggle = document.getElementById('password-toggle');
+
+    document.querySelectorAll('[data-login-year]').forEach((element) => {
+      element.textContent = new Date().getFullYear();
+    });
+
+    passwordToggle.addEventListener('click', () => {
+      const visible = passwordInput.type === 'password';
+      passwordInput.type = visible ? 'text' : 'password';
+      passwordToggle.setAttribute('aria-pressed', String(visible));
+      passwordToggle.setAttribute('aria-label', visible ? 'Sembunyikan password' : 'Tampilkan password');
+      passwordInput.focus();
+    });
+
+    document.getElementById('form').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const error = document.getElementById('error');
+      error.classList.add('hidden');
+      submitButton.disabled = true;
+      submitLabel.textContent = 'Memeriksa kredensial...';
+      spinner.classList.remove('hidden');
       try {
-        const r = await fetch('/api/login', {
+        const response = await fetch('/api/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ password: document.getElementById('password').value })
+          body: JSON.stringify({
+            password: passwordInput.value
+          })
         });
-        const d = await r.json();
-        if (!r.ok) throw new Error(d.error || 'Gagal masuk.');
-        location.href = '/admin/';
-      } catch (ex) {
-        err.textContent = ex.message;
-        err.classList.remove('hidden');
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Gagal masuk.');
+        loading.classList.remove('hidden');
+        loading.classList.add('flex');
+        loading.setAttribute('aria-hidden', 'false');
+        requestAnimationFrame(() => loading.classList.remove('opacity-0'));
+        submitLabel.textContent = 'Berhasil';
+        setTimeout(() => { location.href = '/admin/'; }, 900);
+      } catch (exception) {
+        error.textContent = exception.message;
+        error.classList.remove('hidden');
+        submitButton.disabled = false;
+        submitLabel.textContent = 'Masuk ke panel admin';
+        spinner.classList.add('hidden');
       }
     });
   </script>

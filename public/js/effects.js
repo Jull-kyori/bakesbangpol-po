@@ -50,7 +50,7 @@
       if (el.dataset.fx) return;
       el.dataset.fx = '1';
       el.classList.add('reveal');
-      el.style.setProperty('--d', (i % 4) * 90 + 'ms'); // muncul berurutan, bukan serentak
+      el.style.setProperty('--d', (i % 4) * 70 + 'ms'); // stagger ringan agar gerakan terasa menyatu
       io.observe(el);
     });
   }

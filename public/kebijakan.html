@@ -5,9 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description" content="Aturan komentar dan informasi privasi situs Bakesbangpol Kabupaten Ponorogo." />
   <title>Aturan Komentar &amp; Privasi | Bakesbangpol Kabupaten Ponorogo</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Bitter:wght@500;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/css/output.css" />
 </head>
 <body class="bg-cream text-slate-800 antialiased">
@@ -38,7 +35,12 @@
         <li>Cookie acak pada browser digunakan untuk mengingat reaksi dan mencegah laporan berulang. Situs menyimpan nilai hash cookie untuk fungsi tersebut, bukan token cookie mentah.</li>
         <li>Alamat IP dipakai sementara di memori server untuk membatasi kiriman berlebihan; fitur komentar ini tidak menyimpan alamat IP ke data komentar.</li>
         <li>Nama tampilan terakhir dapat disimpan di penyimpanan lokal browser agar formulir lebih mudah digunakan. Anda dapat menghapus data situs melalui pengaturan browser.</li>
+        <li>Untuk menghitung statistik kunjungan halaman, situs menyimpan ID acak pihak pertama di penyimpanan lokal browser (ID diperbarui setelah 180 hari) dan mencatat halaman serta waktu kunjungan. ID ini bukan identitas orang; statistik pengunjung unik hanya perkiraan dan dapat terhitung ulang saat Anda berganti browser atau menghapus data situs. Situs tidak menyimpan alamat IP, informasi perangkat, atau kata pencarian sebagai bagian dari statistik trafik; alamat IP dipakai sementara di memori untuk membatasi kiriman kunjungan berlebihan. Catatan trafik dan aktivitas admin dihapus setelah 180 hari.</li>
       </ul>
+      <div class="mt-5 rounded-xl bg-cream p-4">
+        <p id="analytics-preference-status" class="text-sm text-slate-700" role="status" aria-live="polite">Memeriksa preferensi pengukuran trafik...</p>
+        <button id="analytics-opt-out" type="button" aria-pressed="false" class="mt-3 rounded-lg bg-white px-4 py-2 text-sm font-semibold text-primary-dark ring-1 ring-primary-dark/30 hover:bg-primary/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-dark">Nonaktifkan pengukuran di browser ini</button>
+      </div>
     </section>
 
     <section class="mt-6 rounded-xl bg-white p-6 ring-1 ring-ink/10">

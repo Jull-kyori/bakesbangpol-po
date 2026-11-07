@@ -7,30 +7,65 @@
   <title>Dashboard Admin | Bakesbangpol Ponorogo</title>
   <link rel="stylesheet" href="/css/output.css" />
 </head>
-<body class="bg-cream text-slate-800 antialiased">
-  <header class="bg-ink text-white">
-    <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-6 py-4">
-      <div>
-        <p class="text-xs font-semibold uppercase tracking-wider text-primary">Panel administrasi</p>
-        <h1 class="font-display text-lg font-bold">Berita, dokumentasi &amp; komentar</h1>
+<body class="admin-page bg-cream text-slate-800 antialiased">
+  <header class="admin-header fixed inset-x-0 top-0 z-40 text-white lg:inset-y-0 lg:left-0 lg:right-auto lg:w-64 lg:overflow-y-auto lg:border-r lg:border-white/10">
+    <div class="flex h-16 items-center justify-between gap-3 px-4 lg:hidden">
+      <button id="admin-sidebar-toggle" type="button" aria-label="Buka navigasi admin" aria-controls="admin-sidebar-panel" aria-expanded="false" class="inline-flex h-10 w-10 items-center justify-center rounded-xl text-white hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
+        <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+      <a href="/admin/" class="min-w-0 flex-1 text-center" aria-label="Dashboard Bakesbangpol Ponorogo">
+        <p class="text-[0.6rem] font-bold uppercase tracking-[0.16em] text-sky-200">Panel administrasi</p>
+        <p class="mt-0.5 truncate font-display text-sm font-bold">Bakesbangpol Ponorogo</p>
+      </a>
+      <span class="h-10 w-10" aria-hidden="true"></span>
+    </div>
+    <button id="admin-sidebar-backdrop" type="button" tabindex="-1" aria-label="Tutup navigasi admin" class="admin-sidebar-backdrop fixed inset-0 z-40 hidden bg-ink/35 opacity-0 backdrop-blur-sm transition-opacity duration-300 lg:hidden"></button>
+    <div id="admin-sidebar-panel" class="admin-sidebar-panel fixed inset-y-0 left-0 z-50 flex w-[min(19rem,84vw)] -translate-x-full flex-col overflow-y-auto border-r border-white/10 px-4 py-5 text-white shadow-2xl transition-transform duration-300 lg:static lg:h-full lg:w-auto lg:translate-x-0 lg:border-0 lg:px-4 lg:py-6 lg:shadow-none">
+      <div class="mb-6 flex items-start justify-between gap-3 lg:mb-0 lg:block lg:px-2">
+        <a href="/admin/" class="flex min-w-0 items-center gap-3" aria-label="Dashboard Bakesbangpol Ponorogo">
+        <img src="/assets/img/logo.png" alt="" class="h-10 w-10 shrink-0 rounded-full bg-white/95 p-1 shadow-lg" />
+        <div>
+          <p class="text-[0.65rem] font-bold uppercase tracking-[0.16em] text-sky-200">Panel administrasi</p>
+          <h1 class="mt-1 font-display text-base font-bold leading-tight">Bakesbangpol<br class="hidden lg:block"> Ponorogo</h1>
+        </div>
+        </a>
+        <button id="admin-sidebar-close" type="button" aria-label="Tutup navigasi admin" class="rounded-lg p-2 text-white/75 hover:bg-white/10 lg:hidden">
+          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m18 6-12 12M6 6l12 12"/></svg>
+        </button>
       </div>
-    <nav aria-label="Navigasi admin" class="flex flex-wrap items-center justify-end gap-3 text-xs sm:gap-4 sm:text-sm">
-      <a href="/admin/" aria-current="page" class="hover:text-primary">Berita &amp; komentar</a>
-      <a href="/admin/#dokumentasi" class="hover:text-primary">Dokumentasi</a>
-      <a href="/admin/#pengaturan" class="hover:text-primary">Pengaturan situs</a>
-      <a href="/" target="_blank" rel="noopener noreferrer" class="hover:text-primary">Lihat website</a>
-      <button id="logout" type="button" class="rounded-lg bg-white/10 px-3 py-1.5 font-semibold hover:bg-white/20">Keluar</button>
-    </nav>
+      <nav id="admin-sidebar-nav" aria-label="Navigasi admin" class="flex flex-col gap-1 text-sm">
+        <a href="/admin/#berita-admin" aria-current="page" class="rounded-xl bg-white/10 px-3 py-2.5 font-semibold hover:bg-white/15 lg:px-4">Kelola berita</a>
+        <a href="/admin/#trafik" class="rounded-xl px-3 py-2.5 font-semibold text-white/75 hover:bg-white/10 hover:text-white lg:px-4">Analitik trafik</a>
+        <a href="/admin/#struktur-admin" class="rounded-xl px-3 py-2.5 font-semibold text-white/75 hover:bg-white/10 hover:text-white lg:px-4">Struktur organisasi</a>
+        <a href="/admin/#dokumentasi" class="rounded-xl px-3 py-2.5 font-semibold text-white/75 hover:bg-white/10 hover:text-white lg:px-4">Dokumentasi</a>
+        <a href="/admin/#pengaturan" class="rounded-xl px-3 py-2.5 font-semibold text-white/75 hover:bg-white/10 hover:text-white lg:px-4">Pengaturan</a>
+        <a href="/admin/#aktivitas" class="rounded-xl px-3 py-2.5 font-semibold text-white/75 hover:bg-white/10 hover:text-white lg:px-4">Log aktivitas</a>
+        <a href="/admin/#moderasi" class="rounded-xl px-3 py-2.5 font-semibold text-white/75 hover:bg-white/10 hover:text-white lg:px-4">Moderasi komentar</a>
+      </nav>
+      <div class="mt-auto flex flex-col gap-2 pt-6">
+        <a href="/" target="_blank" rel="noopener noreferrer" class="rounded-xl px-3 py-2 text-xs font-semibold text-white/75 hover:bg-white/10 hover:text-white lg:px-4 lg:py-2.5 lg:text-sm">Lihat website ↗</a>
+        <button id="logout" type="button" class="rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-ink hover:bg-sky-200">Keluar</button>
+      </div>
     </div>
   </header>
 
   <div id="toast" class="fixed right-4 top-4 z-50 hidden max-w-sm rounded-lg px-4 py-3 text-sm font-semibold shadow-lg" role="status" data-motion="enter"></div>
 
-  <main class="mx-auto grid max-w-6xl gap-8 px-6 py-10 lg:grid-cols-5">
+  <main id="berita-admin" data-admin-view="berita-admin" tabindex="-1" class="mx-auto grid max-w-7xl gap-5 px-4 pb-8 pt-20 sm:gap-6 sm:px-6 sm:pb-10 sm:pt-24 lg:mx-0 lg:ml-64 lg:max-w-none lg:gap-8 lg:px-8 lg:py-8 xl:grid-cols-5">
+    <div class="admin-welcome xl:col-span-5" data-motion="enter">
+      <div class="relative z-10">
+        <p class="text-xs font-bold uppercase tracking-[0.18em] text-primary-dark">Ruang kerja admin</p>
+        <h2 class="mt-2 font-display text-2xl font-bold text-ink sm:text-3xl">Kelola informasi Ponorogo</h2>
+        <p class="mt-2 max-w-2xl text-sm leading-relaxed text-slate-600">Atur berita, pantau aktivitas website, dan perbarui informasi Bakesbangpol dalam satu tempat.</p>
+      </div>
+      <a href="/" target="_blank" rel="noopener noreferrer" class="admin-welcome-link relative z-10 mt-5 inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition sm:mt-0">
+        Lihat website <span aria-hidden="true">&nearr;</span>
+      </a>
+    </div>
 
     <!-- Form -->
-    <section class="lg:col-span-2" data-reveal>
-      <form id="form" class="rounded-xl bg-white p-6 ring-1 ring-ink/10">
+    <section class="xl:col-span-2" data-reveal>
+      <form id="form" class="admin-card rounded-2xl bg-white p-6 shadow-sm ring-1 ring-ink/10">
         <h2 id="form-title" class="text-xl font-bold text-ink">Tulis berita baru</h2>
 
         <div class="mt-5 space-y-4">
@@ -38,7 +73,7 @@
             <label for="judul" class="text-sm font-semibold text-ink">Judul</label>
             <input id="judul" name="judul" required maxlength="200" class="mt-1 w-full rounded-lg border border-ink/20 px-3 py-2" />
           </div>
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <label for="kategori" class="text-sm font-semibold text-ink">Kategori</label>
               <select id="kategori" name="kategori" required class="mt-1 w-full rounded-lg border border-ink/20 bg-white px-3 py-2"></select>
@@ -55,7 +90,8 @@
               <img id="gambar-preview" alt="" class="h-28 rounded-lg object-cover" />
               <label class="mt-2 flex items-center gap-2 text-sm"><input type="checkbox" name="hapus_gambar" /> Hapus gambar ini</label>
             </div>
-             <div>
+          </div>
+          <div>
             <label for="galeri" class="text-sm font-semibold text-ink">Foto tambahan untuk galeri (maks. 10, opsional)</label>
             <input id="galeri" name="galeri" type="file" multiple accept="image/jpeg,image/png,image/webp" class="mt-1 w-full text-sm" />
             <p class="mt-1 text-sm text-slate-500">Bisa pilih banyak foto sekaligus. Foto ini tampil di halaman berita, di bawah isi.</p>
@@ -63,7 +99,6 @@
               <p class="text-sm font-semibold text-ink">Foto galeri saat ini</p>
               <div id="galeri-lama-isi" class="mt-2 grid grid-cols-3 gap-2"></div>
             </div>
-          </div>
           </div>
           <div>
             <label for="isi" class="text-sm font-semibold text-ink">Isi berita</label>
@@ -80,14 +115,203 @@
     </section>
 
     <!-- Daftar -->
-    <section class="lg:col-span-3" data-reveal>
-      <h2 class="text-xl font-bold text-ink">Berita yang sudah terbit <span id="total" class="text-base font-normal text-slate-500"></span></h2>
+    <section class="xl:col-span-3" data-reveal>
+      <h2 class="text-xl font-bold text-ink sm:text-2xl">Berita yang sudah terbit <span id="total" class="text-base font-normal text-slate-500"></span></h2>
       <ul id="list" class="mt-5 space-y-3"></ul>
       <div id="pager" class="mt-6 flex flex-wrap gap-2"></div>
     </section>
   </main>
 
-  <section id="dokumentasi" class="mx-auto max-w-6xl px-6 pb-12" data-reveal>
+  <section id="trafik" data-admin-view="trafik" tabindex="-1" class="mx-auto max-w-7xl px-4 pb-10 sm:px-6 sm:pb-12 lg:mx-0 lg:ml-64 lg:max-w-none lg:px-8" data-reveal>
+    <div class="traffic-dashboard">
+      <header class="traffic-dashboard-header">
+        <div>
+          <p class="text-xs font-bold uppercase tracking-[0.16em] text-primary-dark">Pemantauan situs</p>
+          <h2 class="mt-1 text-2xl font-bold text-ink sm:text-3xl">Dashboard &amp; riwayat kunjungan</h2>
+          <p id="traffic-period-label" class="mt-1 text-sm text-slate-600">Ringkasan kunjungan website Bakesbangpol Ponorogo.</p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <div class="flex rounded-xl bg-slate-100 p-1" role="group" aria-label="Rentang waktu analitik trafik">
+            <button type="button" data-traffic-days="7" aria-pressed="true" class="rounded-lg bg-white px-3 py-2 text-xs font-semibold text-primary-dark shadow-sm">7 hari</button>
+            <button type="button" data-traffic-days="30" aria-pressed="false" class="rounded-lg px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-white">30 hari</button>
+            <button type="button" data-traffic-days="90" aria-pressed="false" class="rounded-lg px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-white">90 hari</button>
+            <button type="button" data-traffic-days="180" aria-pressed="false" class="rounded-lg px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-white">180 hari</button>
+          </div>
+          <button id="refresh-traffic" type="button" class="rounded-xl px-3 py-2.5 text-xs font-bold text-primary-dark ring-1 ring-ink/15 hover:bg-slate-50">Muat ulang</button>
+          <a href="/api/admin/traffic/export?days=180" class="rounded-xl bg-ink px-4 py-2.5 text-xs font-bold text-white hover:bg-primary-dark">Unduh CSV</a>
+        </div>
+      </header>
+      <p id="traffic-status" class="sr-only" role="status" aria-live="polite"></p>
+
+      <div class="traffic-summary-grid">
+        <article class="traffic-summary-card traffic-summary-card--today">
+          <span class="traffic-summary-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M5 21v-2a7 7 0 0 1 14 0v2"/></svg>
+          </span>
+          <div class="min-w-0">
+            <p class="traffic-summary-label">Pengunjung hari ini</p>
+            <p id="traffic-visitors-today" class="traffic-summary-value">—</p>
+            <p id="traffic-today-change" class="traffic-summary-note">Pengunjung unik hari ini</p>
+          </div>
+        </article>
+        <article class="traffic-summary-card traffic-summary-card--views">
+          <span class="traffic-summary-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h8"/></svg>
+          </span>
+          <div class="min-w-0">
+            <p class="traffic-summary-label">Total tampilan</p>
+            <p id="traffic-views-total" class="traffic-summary-value">—</p>
+            <p class="traffic-summary-note">Sesuai rentang terpilih</p>
+          </div>
+        </article>
+        <article class="traffic-summary-card traffic-summary-card--month">
+          <span class="traffic-summary-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+          </span>
+          <div class="min-w-0">
+            <p id="traffic-month-label" class="traffic-summary-label">Tampilan bulan ini</p>
+            <p id="traffic-month-views" class="traffic-summary-value">—</p>
+            <p class="traffic-summary-note">Sejak awal bulan</p>
+          </div>
+        </article>
+        <article class="traffic-summary-card traffic-summary-card--popular">
+          <span class="traffic-summary-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"/><path d="M9 9v.01M9 12v.01M9 15v.01M9 18v.01"/></svg>
+          </span>
+          <div class="min-w-0">
+            <p class="traffic-summary-label">Halaman terpopuler</p>
+            <p id="traffic-top-page-name" class="traffic-summary-popular-name">—</p>
+            <p id="traffic-top-page-views" class="traffic-summary-note">Belum ada data</p>
+          </div>
+        </article>
+      </div>
+
+      <div class="traffic-chart-grid">
+        <article class="traffic-chart-card">
+          <div class="traffic-card-heading">
+            <div>
+              <h3>Kunjungan harian</h3>
+              <p id="traffic-chart-subtitle" class="mt-1 text-xs text-slate-500">7 hari terakhir</p>
+            </div>
+            <span class="traffic-chart-legend"><span></span>Tampilan halaman</span>
+          </div>
+          <div id="traffic-chart" class="traffic-bar-chart" aria-label="Grafik kunjungan harian"></div>
+          <p id="traffic-chart-detail" class="sr-only" aria-live="polite"></p>
+        </article>
+
+        <article class="traffic-chart-card">
+          <div class="traffic-card-heading">
+            <div>
+              <h3>Kunjungan per halaman</h3>
+              <p class="mt-1 text-xs text-slate-500">Distribusi pada rentang terpilih</p>
+            </div>
+          </div>
+          <div class="traffic-donut-layout">
+            <div id="traffic-category-chart" class="traffic-donut" role="img" aria-label="Diagram kunjungan per halaman">
+              <div class="traffic-donut-hole">
+                <strong id="traffic-donut-total">—</strong>
+                <span>Tampilan</span>
+              </div>
+            </div>
+            <ol id="traffic-top-pages" class="traffic-page-legend" aria-label="Rincian kunjungan per halaman"></ol>
+          </div>
+        </article>
+      </div>
+      <p class="traffic-privacy-note">Pengunjung unik dihitung sebagai perkiraan berdasarkan ID acak di browser. IP dan data perangkat tidak direkam; halaman admin tidak dihitung. Data kunjungan disimpan hingga 180 hari.</p>
+    </div>
+  </section>
+
+  <section id="aktivitas" data-admin-view="aktivitas" tabindex="-1" class="mx-auto max-w-7xl px-4 pb-10 sm:px-6 sm:pb-12 lg:mx-0 lg:ml-64 lg:max-w-none lg:px-8" data-reveal>
+    <div class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-ink/10 sm:p-6">
+      <div class="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p class="text-xs font-bold uppercase tracking-[0.16em] text-primary-dark">Pemantauan admin</p>
+          <h2 class="mt-1 text-2xl font-bold text-ink">Log aktivitas</h2>
+          <p class="mt-1 text-sm text-slate-600">Aktivitas admin terbaru, termasuk hasil tindakan dan percobaan login.</p>
+        </div>
+        <button id="refresh-activity" type="button" class="rounded-lg px-4 py-2 text-sm font-semibold text-primary-dark ring-1 ring-primary-dark/30 hover:bg-primary/15 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-dark">Muat ulang</button>
+      </div>
+      <p id="activity-status" class="sr-only" role="status" aria-live="polite"></p>
+      <div class="mt-4 overflow-x-auto rounded-xl ring-1 ring-ink/10">
+        <table class="w-full min-w-2xl border-collapse text-left text-sm">
+          <thead class="bg-slate-100 text-xs uppercase tracking-wide text-slate-600">
+            <tr>
+              <th scope="col" class="px-4 py-3">Waktu</th>
+              <th scope="col" class="px-4 py-3">Pengguna</th>
+              <th scope="col" class="px-4 py-3">Aktivitas</th>
+              <th scope="col" class="px-4 py-3">Ringkasan</th>
+              <th scope="col" class="px-4 py-3">Hasil</th>
+            </tr>
+          </thead>
+          <tbody id="activity-list" class="divide-y divide-ink/10 bg-white">
+            <tr><td colspan="5" class="px-4 py-5 text-center text-slate-500">Memuat log aktivitas...</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="mt-3 text-xs leading-relaxed text-slate-500">Log disimpan maksimal 180 hari atau 10.000 entri. Saat ini semua sesi menggunakan akun bersama “Admin”; log tidak merekam password, isi komentar, atau alamat IP.</p>
+    </div>
+  </section>
+
+  <section id="struktur-admin" data-admin-view="struktur-admin" tabindex="-1" class="mx-auto max-w-7xl px-4 pb-10 sm:px-6 sm:pb-12 lg:mx-0 lg:ml-64 lg:max-w-none lg:px-8" data-reveal>
+    <div class="mb-6 flex flex-wrap items-end justify-between gap-4">
+      <div>
+        <p class="text-xs font-bold uppercase tracking-[0.16em] text-primary-dark">Profil organisasi</p>
+        <h2 class="mt-1 text-2xl font-bold text-ink sm:text-3xl">Kelola struktur organisasi</h2>
+        <p class="mt-2 max-w-2xl text-sm leading-relaxed text-slate-600">Perbarui nama, jabatan, bagian, dan foto anggota. Perubahan akan langsung tampil pada halaman utama.</p>
+      </div>
+      <span id="struktur-admin-total" class="rounded-full bg-white px-4 py-2 text-sm font-semibold text-slate-600 ring-1 ring-ink/10"></span>
+    </div>
+    <div class="grid items-start gap-6 xl:grid-cols-[minmax(18rem,.75fr)_minmax(0,1.65fr)]">
+      <form id="struktur-form" class="admin-card rounded-2xl bg-white p-5 shadow-sm ring-1 ring-ink/10 sm:p-6">
+        <div class="mb-5">
+          <p id="struktur-form-kicker" class="text-xs font-bold uppercase tracking-[0.14em] text-primary-dark">Anggota baru</p>
+          <h3 id="struktur-form-title" class="mt-1 text-xl font-bold text-ink">Tambah anggota</h3>
+        </div>
+        <div class="space-y-4">
+          <div>
+            <label for="struktur-name" class="text-sm font-semibold text-ink">Nama lengkap</label>
+            <input id="struktur-name" name="name" required minlength="2" maxlength="120" autocomplete="name" class="admin-input mt-1 w-full rounded-xl border border-ink/15 bg-slate-50/70 px-3 py-2.5" />
+          </div>
+          <div>
+            <label for="struktur-position" class="text-sm font-semibold text-ink">Jabatan</label>
+            <input id="struktur-position" name="position" required minlength="2" maxlength="160" class="admin-input mt-1 w-full rounded-xl border border-ink/15 bg-slate-50/70 px-3 py-2.5" />
+          </div>
+          <div>
+            <label for="struktur-section" class="text-sm font-semibold text-ink">Bagian organisasi</label>
+            <select id="struktur-section" name="sectionId" required class="admin-input mt-1 w-full rounded-xl border border-ink/15 bg-slate-50/70 px-3 py-2.5"></select>
+          </div>
+          <div>
+            <label for="struktur-photo" class="text-sm font-semibold text-ink">Foto anggota</label>
+            <input id="struktur-photo" name="foto" type="file" accept="image/jpeg,image/png,image/webp" class="admin-input mt-1 block w-full rounded-xl border border-ink/15 bg-slate-50/70 p-2 text-sm" />
+            <p class="mt-1 text-xs leading-relaxed text-slate-500">JPG, PNG, atau WebP, maksimal 3 MB. Foto persegi atau potret akan tampil dipotong rapi.</p>
+          </div>
+          <div id="struktur-photo-current" class="hidden rounded-xl bg-cream p-3">
+            <div class="flex items-center gap-3">
+              <img id="struktur-photo-preview" alt="" class="h-16 w-16 rounded-xl object-cover ring-1 ring-ink/10" />
+              <div class="min-w-0 flex-1">
+                <p class="text-sm font-semibold text-ink">Foto tersimpan</p>
+                <label class="mt-1 flex items-center gap-2 text-xs text-slate-600"><input id="struktur-remove-photo" name="removePhoto" type="checkbox" value="true" /> Hapus foto lama</label>
+              </div>
+            </div>
+          </div>
+          <div id="struktur-photo-new-preview" class="hidden items-center gap-3 rounded-xl bg-cream p-3">
+            <img id="struktur-photo-new-image" alt="Pratinjau foto baru" class="h-16 w-16 rounded-xl object-cover ring-1 ring-ink/10" />
+            <span id="struktur-photo-new-label" class="text-sm font-medium text-slate-600"></span>
+          </div>
+        </div>
+        <div class="mt-6 flex flex-wrap gap-3">
+          <button id="struktur-submit" type="submit" class="rounded-xl bg-primary px-5 py-2.5 font-bold text-ink shadow-sm hover:bg-sky-200">Simpan anggota</button>
+          <button id="struktur-cancel" type="button" class="hidden rounded-xl px-5 py-2.5 font-semibold text-slate-600 ring-1 ring-ink/15 hover:bg-cream">Batal</button>
+        </div>
+        <p id="struktur-feedback" class="mt-3 text-sm" role="status" aria-live="polite"></p>
+      </form>
+      <div id="struktur-admin-list" class="space-y-5">
+        <p class="rounded-2xl bg-white p-6 text-sm text-slate-500 ring-1 ring-ink/10">Memuat anggota...</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="dokumentasi" data-admin-view="dokumentasi" tabindex="-1" class="mx-auto max-w-6xl px-4 pb-10 sm:px-6 sm:pb-12 lg:mx-0 lg:ml-64 lg:max-w-none lg:px-8" data-reveal>
     <div class="mb-5">
       <p class="text-sm font-bold uppercase tracking-wider text-accent">Galeri publik</p>
       <h2 class="mt-1 text-2xl font-bold text-ink">Kelola dokumentasi kegiatan</h2>
@@ -95,7 +319,7 @@
     </div>
     <div class="grid items-start gap-8 lg:grid-cols-[0.8fr_1.2fr]">
       <form id="dokumentasi-form" class="space-y-4 rounded-xl bg-white p-6 ring-1 ring-ink/10">
-        <h3 class="text-lg font-bold text-ink">Tambah foto dokumentasi</h3>
+        <h3 class="text-lg font-bold text-ink">Buat postingan dokumentasi</h3>
         <div>
           <label for="dokumentasi-judul" class="text-sm font-semibold text-ink">Judul</label>
           <input id="dokumentasi-judul" name="judul" required minlength="5" maxlength="200" class="mt-1 w-full rounded-lg border border-ink/20 px-3 py-2" />
@@ -111,15 +335,17 @@
           </div>
         </div>
         <div>
-          <label for="dokumentasi-gambar" class="text-sm font-semibold text-ink">Foto (JPG, PNG, WebP; maks. 3 MB)</label>
-          <input id="dokumentasi-gambar" name="gambar" type="file" accept="image/jpeg,image/png,image/webp" required class="mt-1 w-full text-sm" />
+          <label for="dokumentasi-gambar" class="text-sm font-semibold text-ink">Foto (JPG, PNG, WebP; maks. 10 foto, 3 MB per foto)</label>
+          <input id="dokumentasi-gambar" name="gambar" type="file" accept="image/jpeg,image/png,image/webp" multiple required class="mt-1 w-full text-sm" />
+          <p class="mt-1 text-xs text-slate-500">Pilih beberapa foto sekaligus untuk membuat satu postingan album. Foto pertama menjadi sampul.</p>
+          <div id="dokumentasi-preview" class="mt-3 hidden grid-cols-3 gap-2 sm:grid-cols-5" aria-live="polite"></div>
         </div>
         <div>
           <label for="dokumentasi-keterangan" class="text-sm font-semibold text-ink">Keterangan (opsional)</label>
           <textarea id="dokumentasi-keterangan" name="keterangan" rows="3" maxlength="500" class="mt-1 w-full rounded-lg border border-ink/20 px-3 py-2"></textarea>
         </div>
         <div class="flex flex-wrap items-center gap-3">
-          <button id="dokumentasi-submit" type="submit" class="rounded-lg bg-primary px-5 py-2.5 font-semibold text-ink hover:bg-accent hover:text-white">Unggah dokumentasi</button>
+          <button id="dokumentasi-submit" type="submit" class="rounded-lg bg-primary px-5 py-2.5 font-semibold text-ink hover:bg-accent hover:text-white">Terbitkan postingan</button>
           <span id="dokumentasi-feedback" class="text-sm" role="status" aria-live="polite"></span>
         </div>
       </form>
@@ -130,14 +356,14 @@
     </div>
   </section>
 
-  <section id="pengaturan" class="mx-auto max-w-6xl px-6 pb-12">
+  <section id="pengaturan" data-admin-view="pengaturan" tabindex="-1" class="mx-auto max-w-6xl px-4 pb-10 sm:px-6 sm:pb-12 lg:mx-0 lg:ml-64 lg:max-w-none lg:px-8">
     <div class="rounded-xl bg-white p-6 ring-1 ring-ink/10 sm:p-8" data-reveal>
       <div class="mb-6">
         <h2 class="text-2xl font-bold text-ink">Pengaturan situs</h2>
         <p class="mt-1 text-sm text-slate-600">Perbarui informasi yang tampil di website. Perubahan disimpan di server dan langsung berlaku.</p>
       </div>
       <form id="site-settings-form" class="space-y-6">
-        <fieldset class="grid gap-4 md:grid-cols-2">
+        <fieldset class="grid gap-4 sm:grid-cols-2">
           <legend class="mb-3 text-lg font-bold text-ink">Identitas dan kontak</legend>
           <div>
             <label for="setting-brand" class="text-sm font-semibold">Nama singkat di menu</label>
@@ -147,11 +373,11 @@
             <label for="setting-district" class="text-sm font-semibold">Nama kabupaten/kota</label>
             <input id="setting-district" name="district" required maxlength="80" class="mt-1 w-full rounded-lg border border-ink/20 px-3 py-2" />
           </div>
-          <div class="md:col-span-2">
+          <div class="sm:col-span-2">
             <label for="setting-organization" class="text-sm font-semibold">Nama lengkap instansi</label>
             <input id="setting-organization" name="organizationName" required maxlength="120" class="mt-1 w-full rounded-lg border border-ink/20 px-3 py-2" />
           </div>
-          <div class="md:col-span-2">
+          <div class="sm:col-span-2">
             <label for="setting-address" class="text-sm font-semibold">Alamat</label>
             <input id="setting-address" name="address" maxlength="240" class="mt-1 w-full rounded-lg border border-ink/20 px-3 py-2" />
           </div>
@@ -163,7 +389,7 @@
             <label for="setting-email" class="text-sm font-semibold">Email</label>
             <input id="setting-email" name="email" type="email" maxlength="120" class="mt-1 w-full rounded-lg border border-ink/20 px-3 py-2" />
           </div>
-          <div class="md:col-span-2">
+          <div class="sm:col-span-2">
             <label for="setting-hours" class="text-sm font-semibold">Jam layanan</label>
             <input id="setting-hours" name="serviceHours" maxlength="120" class="mt-1 w-full rounded-lg border border-ink/20 px-3 py-2" />
           </div>
@@ -199,7 +425,7 @@
     </div>
   </section>
 
-  <section id="moderasi" class="mx-auto max-w-6xl px-6 pb-12" data-reveal>
+  <section id="moderasi" data-admin-view="moderasi" tabindex="-1" class="mx-auto max-w-6xl px-4 pb-10 sm:px-6 sm:pb-12 lg:mx-0 lg:ml-64 lg:max-w-none lg:px-8" data-reveal>
     <h2 class="text-2xl font-bold text-ink">Moderasi komentar</h2>
     <div class="mt-5 grid gap-8 lg:grid-cols-2">
       <div>

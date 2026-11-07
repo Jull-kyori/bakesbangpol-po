@@ -21,8 +21,8 @@ const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 const PUBLIC_DIR = path.join(__dirname, 'public');
 const UPLOAD_DIR = path.join(PUBLIC_DIR, 'uploads');
 const MAX_GALERI = 10;
+const MAX_DOKUMENTASI_PHOTOS = 10;
 const { pool, readState, updateState, verifyState } = require('./lib/storage');
-const { remoteEnabled, removeImage, saveImage } = require('./lib/image-storage');
 const DEFAULT_SITE_SETTINGS = Object.freeze({
   brandName: 'BAKESBANGPOL',
   organizationName: 'Badan Kesatuan Bangsa dan Politik',
@@ -55,7 +55,7 @@ const KATEGORI = [
   'Kewaspadaan Nasional'
 ];
 
-if (!process.env.VERCEL && !remoteEnabled) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 
 function readSiteSettings(saved) {
   if (!saved || typeof saved !== 'object' || Array.isArray(saved)) {
@@ -120,6 +120,14 @@ function validateSiteSettings(body) {
   }
   return { settings: { ...settings, announcementEnabled: body.announcementEnabled, assistantEnabled: body.assistantEnabled }, errors };
 }
+function removeUpload(gambar) {
+  if (typeof gambar === 'string' && gambar.startsWith('/uploads/')) {
+    fs.unlink(path.join(UPLOAD_DIR, path.basename(gambar)), (error) => {
+      if (error && error.code !== 'ENOENT') console.error(`[Upload] Gagal menghapus file: ${error.message}`);
+    });
+  }
+}
+
 // --- Komentar, reaksi, dan laporan ---
 function visitorKey(req, res) {
   let token = getCookie(req, 'visitor');
@@ -131,36 +139,7 @@ function visitorKey(req, res) {
   }
   return crypto.createHash('sha256').update(token).digest('hex');
 }
-const limitScopes = new WeakMap();
-function createLimitMap(scope) {
-  const limits = new Map();
-  limitScopes.set(limits, scope);
-  return limits;
-}
-async function consumeLimit(limits, key, max, windowMs) {
-  if (process.env.VERCEL) {
-    const scope = limitScopes.get(limits);
-    if (!scope) throw new Error('Rate-limit scope is not configured.');
-    const bucketKey = crypto.createHash('sha256').update(`${scope}:${key}`).digest('hex');
-    const result = await pool.query(
-      `INSERT INTO rate_limit_buckets (bucket_key, count, reset_at)
-       VALUES ($1, 1, NOW() + ($2 * INTERVAL '1 millisecond'))
-       ON CONFLICT (bucket_key) DO UPDATE SET
-         count = CASE WHEN rate_limit_buckets.reset_at <= NOW() THEN 1 ELSE rate_limit_buckets.count + 1 END,
-         reset_at = CASE
-           WHEN rate_limit_buckets.reset_at <= NOW() THEN EXCLUDED.reset_at
-           ELSE rate_limit_buckets.reset_at
-         END
-       RETURNING count`,
-      [bucketKey, windowMs]
-    );
-    if (crypto.randomInt(100) === 0) {
-      pool.query('DELETE FROM rate_limit_buckets WHERE reset_at <= NOW()')
-        .catch((error) => console.error(`[PostgreSQL] Gagal membersihkan rate limit kedaluwarsa: ${error.message}`));
-    }
-    return Number(result.rows[0].count) <= max;
-  }
-
+function consumeLimit(limits, key, max, windowMs) {
   const now = Date.now();
   if (limits.size > 10000) {
     for (const [entryKey, entry] of limits) {
@@ -176,20 +155,9 @@ async function consumeLimit(limits, key, max, windowMs) {
   entry.count++;
   return true;
 }
-async function clearLimit(limits, key) {
-  if (process.env.VERCEL) {
-    const scope = limitScopes.get(limits);
-    if (!scope) throw new Error('Rate-limit scope is not configured.');
-    const bucketKey = crypto.createHash('sha256').update(`${scope}:${key}`).digest('hex');
-    await pool.query('DELETE FROM rate_limit_buckets WHERE bucket_key = $1', [bucketKey]);
-    return;
-  }
-  limits.delete(key);
-}
-const commentLimits = createLimitMap('comment');
-const reportLimits = createLimitMap('report');
-const reactionLimits = createLimitMap('reaction');
-const loginLimits = createLimitMap('login');
+const commentLimits = new Map();
+const reportLimits = new Map();
+const reactionLimits = new Map();
 function findComment(data, id) {
   return data.comments.find((item) => item.id === id && !item.deletedAt);
 }
@@ -208,6 +176,9 @@ function isPublishedComment(data, item) {
 }
 
 // --- Sesi & login ---
+const sessions = new Map();
+const attempts = new Map();
+
 function getCookie(req, name) {
   for (const part of (req.headers.cookie || '').split(';')) {
     const p = part.trim();
@@ -216,21 +187,19 @@ function getCookie(req, name) {
   }
   return null;
 }
-async function isAdmin(req) {
+function isAdmin(req) {
   const token = getCookie(req, 'sid');
-  if (!/^[a-f0-9]{64}$/.test(token || '')) return false;
-  const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
-  const result = await pool.query(
-    'SELECT 1 FROM admin_sessions WHERE token_hash = $1 AND expires_at > NOW()',
-    [tokenHash]
-  );
-  return result.rowCount > 0;
+  const exp = token && sessions.get(token);
+  if (!exp) return false;
+  if (exp < Date.now()) { sessions.delete(token); return false; }
+  return true;
 }
 function requireAdmin(req, res, next) {
-  isAdmin(req).then((valid) => {
-    if (valid) return next();
-    res.status(401).json({ error: 'Sesi berakhir. Silakan masuk lagi.' });
-  }).catch(next);
+  if (isAdmin(req)) {
+    req.adminAuthenticated = true;
+    return next();
+  }
+  res.status(401).json({ error: 'Sesi berakhir. Silakan masuk lagi.' });
 }
 function safeEqual(a, b) {
   const ha = crypto.createHash('sha256').update(a).digest();
@@ -246,18 +215,13 @@ function cookie(value, maxAgeSec) {
 // --- Upload gambar ---
 const EXT = { 'image/jpeg': '.jpg', 'image/png': '.png', 'image/webp': '.webp' };
 function hasExpectedFileSignature(file) {
+  const descriptor = fs.openSync(file.path, 'r');
   const header = Buffer.alloc(12);
-  let bytesRead = 0;
-  if (file.buffer) {
-    bytesRead = Math.min(file.buffer.length, header.length);
-    file.buffer.copy(header, 0, 0, bytesRead);
-  } else {
-    const descriptor = fs.openSync(file.path, 'r');
-    try {
-      bytesRead = fs.readSync(descriptor, header, 0, header.length, 0);
-    } finally {
-      fs.closeSync(descriptor);
-    }
+  let bytesRead;
+  try {
+    bytesRead = fs.readSync(descriptor, header, 0, header.length, 0);
+  } finally {
+    fs.closeSync(descriptor);
   }
   if (file.mimetype === 'image/jpeg') return bytesRead >= 3 && header.subarray(0, 3).equals(Buffer.from([0xff, 0xd8, 0xff]));
   if (file.mimetype === 'image/png') return bytesRead >= 8 && header.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
@@ -265,7 +229,7 @@ function hasExpectedFileSignature(file) {
   return false;
 }
 const upload = multer({
-  storage: process.env.VERCEL || remoteEnabled ? multer.memoryStorage() : multer.diskStorage({
+  storage: multer.diskStorage({
     destination: (req, file, cb) => cb(null, UPLOAD_DIR),
     filename: (req, file, cb) => cb(null, crypto.randomBytes(12).toString('hex') + EXT[file.mimetype])
   }),
@@ -281,11 +245,6 @@ function uploadImage(req, res, next) {
     if (!err) {
       try {
         const files = [coverFile(req), ...galleryFiles(req)].filter(Boolean);
-        const totalSize = files.reduce((total, file) => total + file.size, 0);
-        if (process.env.VERCEL && totalSize > 4 * 1024 * 1024) {
-          discardUploads(req);
-          return res.status(413).json({ error: 'Total unggahan berita maksimal 4 MB di hosting Vercel. Unggah foto lebih sedikit atau perkecil ukuran file.' });
-        }
         if (!files.some((file) => !hasExpectedFileSignature(file))) return next();
         discardUploads(req);
         return res.status(400).json({ error: 'Isi file tidak sesuai dengan format gambar yang dipilih.' });
@@ -301,66 +260,59 @@ function uploadImage(req, res, next) {
     res.status(400).json({ error: msg });
   });
 }
-function uploadDocumentationImage(req, res, next) {
-  upload.single('gambar')(req, res, (error) => {
+function discardDocumentationUploads(req) {
+  (req.files || []).forEach((file) => removeUpload('/uploads/' + file.filename));
+}
+function uploadDocumentationImages(req, res, next) {
+  upload.array('gambar', MAX_DOKUMENTASI_PHOTOS)(req, res, (error) => {
     if (error) {
-      discardFile(req.file);
-      const message = error.code === 'LIMIT_FILE_SIZE'
-        ? 'Ukuran foto maksimal 3 MB.'
-        : error.message;
+      discardDocumentationUploads(req);
+      let message = error.message;
+      if (error.code === 'LIMIT_FILE_SIZE') message = 'Ukuran setiap foto maksimal 3 MB.';
+      if (error.code === 'LIMIT_FILE_COUNT' || error.code === 'LIMIT_UNEXPECTED_FILE') {
+        message = `Maksimal ${MAX_DOKUMENTASI_PHOTOS} foto dalam satu postingan.`;
+      }
       return res.status(400).json({ error: message });
     }
-    if (!req.file) return res.status(400).json({ error: 'Pilih foto dokumentasi terlebih dahulu.' });
+    if (!req.files || !req.files.length) return res.status(400).json({ error: 'Pilih minimal satu foto dokumentasi.' });
     try {
-      if (!hasExpectedFileSignature(req.file)) {
-        discardFile(req.file);
+      if (req.files.some((file) => !hasExpectedFileSignature(file))) {
+        discardDocumentationUploads(req);
         return res.status(400).json({ error: 'Isi file tidak sesuai dengan format gambar yang dipilih.' });
       }
     } catch (verificationError) {
-      discardFile(req.file);
+      discardDocumentationUploads(req);
       return next(verificationError);
     }
     next();
   });
 }
+function uploadStructurePhoto(req, res, next) {
+  upload.single('foto')(req, res, (error) => {
+    if (error) {
+      if (req.file) removeUpload('/uploads/' + req.file.filename);
+      let message = error.message;
+      if (error.code === 'LIMIT_FILE_SIZE') message = 'Ukuran foto maksimal 3 MB.';
+      if (error.code === 'LIMIT_UNEXPECTED_FILE' || error.code === 'LIMIT_FILE_COUNT') {
+        message = 'Pilih satu foto anggota saja.';
+      }
+      return res.status(400).json({ error: message });
+    }
+    if (!req.file) return next();
+    try {
+      if (hasExpectedFileSignature(req.file)) return next();
+      removeUpload('/uploads/' + req.file.filename);
+      return res.status(400).json({ error: 'Isi file tidak sesuai dengan format gambar yang dipilih.' });
+    } catch (verificationError) {
+      removeUpload('/uploads/' + req.file.filename);
+      return next(verificationError);
+    }
+  });
+}
 const coverFile = (req) => ((req.files || {}).gambar || [])[0];
 const galleryFiles = (req) => (req.files || {}).galeri || [];
-function discardFile(file) {
-  if (file && file.path) {
-    fs.unlink(file.path, (error) => {
-      if (error && error.code !== 'ENOENT') console.error(`[Upload] Gagal membersihkan file sementara: ${error.message}`);
-    });
-  }
-}
 const discardUploads = (req) =>
-  [coverFile(req), ...galleryFiles(req)].filter(Boolean).forEach(discardFile);
-async function saveUploadedFiles(files) {
-  const saved = [];
-  try {
-    for (const file of files) saved.push(await saveImage(file));
-    return saved;
-  } catch (error) {
-    await Promise.all(saved.map((image) => removeImage(image)));
-    throw error;
-  }
-}
-async function removeUploadedFiles(files) {
-  await Promise.all(files.filter(Boolean).map((image) => removeImage(image)));
-}
-async function removeImagesNoLongerUsed(images) {
-  if (!images.length) return;
-  try {
-    const { berita, dokumentasi } = await readState(['berita', 'dokumentasi']);
-    const used = new Set(dokumentasi.map((item) => item.gambar));
-    berita.forEach((item) => {
-      if (item.gambar) used.add(item.gambar);
-      (item.galeri || []).forEach((image) => used.add(image));
-    });
-    await removeUploadedFiles([...new Set(images)].filter((image) => !used.has(image)));
-  } catch (error) {
-    console.error(`[Upload] Tidak dapat memeriksa pemakaian foto lama; file dipertahankan: ${error.message}`);
-  }
-}
+  [coverFile(req), ...galleryFiles(req)].filter(Boolean).forEach((f) => removeUpload('/uploads/' + f.filename));
 
 // --- Validasi berita ---
 function validate(body) {
@@ -393,6 +345,34 @@ function validateDocumentation(body) {
   if (keterangan.length > 500) errors.push('Keterangan maksimal 500 karakter.');
   return { dokumentasi: { judul, kategori, tanggal, keterangan }, errors };
 }
+function validateStructureMember(body, sections) {
+  const name = typeof body.name === 'string' ? body.name.trim() : '';
+  const position = typeof body.position === 'string' ? body.position.trim() : '';
+  const sectionId = typeof body.sectionId === 'string' ? body.sectionId.trim() : '';
+  const errors = [];
+  if (name.length < 2 || name.length > 120) errors.push('Nama harus terdiri dari 2 sampai 120 karakter.');
+  if (position.length < 2 || position.length > 160) errors.push('Jabatan harus terdiri dari 2 sampai 160 karakter.');
+  if (!sections.some((section) => section.id === sectionId)) errors.push('Pilih bagian struktur yang tersedia.');
+  if (body.removePhoto !== undefined && !['true', 'false', true, false].includes(body.removePhoto)) {
+    errors.push('Pilihan penghapusan foto tidak valid.');
+  }
+  return { member: { name, position, sectionId }, errors };
+}
+function validStructure(data) {
+  return data && typeof data === 'object' &&
+    Array.isArray(data.sections) && Array.isArray(data.members) &&
+    data.sections.every((section) =>
+      section && typeof section.id === 'string' && typeof section.title === 'string' &&
+      typeof section.description === 'string') &&
+    data.members.every((member) =>
+      member && typeof member.id === 'string' && typeof member.sectionId === 'string' &&
+      typeof member.name === 'string' && typeof member.position === 'string' &&
+      typeof member.photo === 'string' && Number.isInteger(member.order) &&
+      data.sections.some((section) => section.id === member.sectionId) &&
+      (!member.photo || /^\/uploads\/[a-f0-9]{24}\.(?:jpg|png|webp)$/.test(member.photo))) &&
+    new Set(data.sections.map((section) => section.id)).size === data.sections.length &&
+    new Set(data.members.map((member) => member.id)).size === data.members.length;
+}
 const toListItem = (b) => ({
   id: b.id, judul: b.judul, kategori: b.kategori, tanggal: b.tanggal, gambar: b.gambar,
   ringkasan: b.isi.replace(/\s+/g, ' ').slice(0, 160)
@@ -412,10 +392,8 @@ function httpError(message, status) {
 
 const app = express();
 app.disable('x-powered-by');
-const trustProxyHops = process.env.TRUST_PROXY_HOPS
-  ? Number(process.env.TRUST_PROXY_HOPS)
-  : process.env.VERCEL ? 1 : 0;
-if (process.env.TRUST_PROXY_HOPS || process.env.VERCEL) {
+if (process.env.TRUST_PROXY_HOPS) {
+  const trustProxyHops = Number(process.env.TRUST_PROXY_HOPS);
   if (!Number.isInteger(trustProxyHops) || trustProxyHops < 1 || trustProxyHops > 5) {
     throw new Error('TRUST_PROXY_HOPS must be an integer between 1 and 5.');
   }
@@ -427,41 +405,336 @@ app.use((req, res, next) => {
     'X-Frame-Options': 'DENY',
     'Referrer-Policy': 'strict-origin-when-cross-origin'
   });
+  if (req.path === '/api/login' || req.path === '/api/logout' || req.path.startsWith('/api/admin/')) {
+    res.set({
+      'Cache-Control': 'no-store',
+      Pragma: 'no-cache',
+      Expires: '0'
+    });
+  }
   next();
 });
 app.use(express.json({ limit: '10kb' }));
 
+function auditText(value) {
+  return typeof value === 'string'
+    ? value.replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 200)
+    : '';
+}
+async function recordAdminActivity(action, detail, outcome, actor = 'Admin') {
+  await pool.query(
+    `INSERT INTO admin_activity (actor, action, detail, outcome)
+     VALUES ($1, $2, $3, $4)`,
+    [actor, auditText(action).slice(0, 80), auditText(detail), outcome]
+  );
+  await pool.query(
+    `DELETE FROM admin_activity
+     WHERE created_at < NOW() - INTERVAL '180 days'
+        OR id NOT IN (
+          SELECT id FROM admin_activity ORDER BY id DESC LIMIT 10000
+        )`
+  );
+}
+function adminActivityForRequest(req, statusCode) {
+  const { method, path: requestPath, body = {}, params = {} } = req;
+  const failed = statusCode >= 400;
+  const outcome = failed ? 'gagal' : 'berhasil';
+  const target = auditText(params.id || requestPath.slice(requestPath.lastIndexOf('/') + 1));
+  const title = auditText(body.judul || body.name);
+  const idDetail = target ? `ID ${target}` : '';
+  let action = '';
+  let detail = '';
+
+  if (requestPath === '/api/login') {
+    action = 'Login admin';
+    detail = failed ? `Login gagal (HTTP ${statusCode})` : 'Login berhasil';
+  } else if (requestPath === '/api/logout') {
+    action = 'Logout admin';
+    detail = 'Sesi admin ditutup';
+  } else if (requestPath === '/api/admin/site-settings' && method === 'PUT') {
+    action = 'Pengaturan situs diperbarui';
+  } else if (requestPath === '/api/berita' && method === 'POST') {
+    action = 'Berita diterbitkan';
+    detail = title;
+  } else if (/^\/api\/berita\/[^/]+$/.test(requestPath) && method === 'PUT') {
+    action = 'Berita diperbarui';
+    detail = title || idDetail;
+  } else if (/^\/api\/berita\/[^/]+$/.test(requestPath) && method === 'DELETE') {
+    action = 'Berita dihapus';
+    detail = idDetail;
+  } else if (requestPath === '/api/admin/struktur' && method === 'POST') {
+    action = 'Anggota struktur ditambahkan';
+    detail = title;
+  } else if (/^\/api\/admin\/struktur\/[^/]+$/.test(requestPath) && method === 'PUT') {
+    action = 'Anggota struktur diperbarui';
+    detail = title || idDetail;
+  } else if (/^\/api\/admin\/struktur\/[^/]+$/.test(requestPath) && method === 'DELETE') {
+    action = 'Anggota struktur dihapus';
+    detail = idDetail;
+  } else if (requestPath === '/api/admin/dokumentasi' && method === 'POST') {
+    action = 'Dokumentasi ditambahkan';
+    detail = title;
+  } else if (/^\/api\/admin\/dokumentasi\/[^/]+$/.test(requestPath) && method === 'DELETE') {
+    action = 'Dokumentasi dihapus';
+    detail = idDetail;
+  } else if (/^\/api\/admin\/komentar\/[^/]+$/.test(requestPath) && method === 'PATCH') {
+    action = body.status === 'approved' ? 'Komentar disetujui' : 'Komentar ditolak';
+    detail = idDetail;
+  } else if (/^\/api\/admin\/komentar\/[^/]+$/.test(requestPath) && method === 'DELETE') {
+    action = 'Komentar dihapus';
+    detail = idDetail;
+  } else if (/^\/api\/admin\/laporan-komentar\/[^/]+$/.test(requestPath) && method === 'PATCH') {
+    action = 'Laporan komentar ditinjau';
+    detail = idDetail;
+  } else if (/^\/api\/admin\/laporan-komentar\/[^/]+$/.test(requestPath) && method === 'DELETE') {
+    action = 'Laporan komentar dihapus';
+    detail = idDetail;
+  }
+
+  return action ? { action, detail, outcome } : null;
+}
+const TRACKED_PUBLIC_PAGES = new Set([
+  '/', '/berita.html', '/berita-detail.html', '/aspirasi.html', '/kebijakan.html'
+]);
+const trafficBuckets = new Map();
+async function recordPageView(visitorId, pagePath) {
+  await pool.query(
+    'INSERT INTO traffic_page_views (visitor_id, page_path) VALUES ($1, $2)',
+    [visitorId, pagePath]
+  );
+}
+function trafficDays(value) {
+  const days = Number(value || 30);
+  if (![7, 14, 30, 90, 180].includes(days)) {
+    throw httpError('Pilih rentang 7, 14, 30, 90, atau 180 hari.', 400);
+  }
+  return days;
+}
+function csvCell(value) {
+  const text = String(value == null ? '' : value);
+  const safeText = /^[\s]*[=+\-@]/.test(text) ? `'${text}` : text;
+  return `"${safeText.replace(/"/g, '""')}"`;
+}
+app.use((req, res, next) => {
+  req.auditWasAdmin = req.path === '/api/logout' && isAdmin(req);
+  res.once('finish', () => {
+    const loginRequest = req.path === '/api/login' && req.method === 'POST';
+    const logoutRequest = req.path === '/api/logout' && req.method === 'POST' && req.auditWasAdmin;
+    const adminMutation = req.adminAuthenticated &&
+      ['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method);
+    const deniedAdminRequest = !req.adminAuthenticated &&
+      req.path.startsWith('/api/admin/') && res.statusCode === 401;
+    if (deniedAdminRequest) {
+      recordAdminActivity('Akses admin ditolak', auditText(req.path), 'gagal', 'Tidak terautentikasi')
+        .catch((error) => console.error(`[Admin activity] Gagal mencatat akses ditolak: ${error.message}`));
+      return;
+    }
+    if (!loginRequest && !logoutRequest && !adminMutation) return;
+
+    const entry = adminActivityForRequest(req, res.statusCode);
+    if (!entry) return;
+    recordAdminActivity(entry.action, entry.detail, entry.outcome)
+      .catch((error) => console.error(`[Admin activity] Gagal mencatat aktivitas: ${error.message}`));
+  });
+  next();
+});
+
 // Auth
-app.post('/api/login', asyncRoute(async (req, res) => {
+app.post('/api/login', (req, res) => {
   if (!ADMIN_PASSWORD) {
     return res.status(503).json({ error: 'Login admin belum dikonfigurasi oleh pengelola.' });
   }
-  if (!await consumeLimit(loginLimits, req.ip, 5, 15 * 60 * 1000)) {
-    return res.status(429).json({ error: 'Terlalu banyak percobaan. Coba lagi dalam 15 menit.' });
+  const now = Date.now();
+  const ip = req.ip;
+  if (attempts.size > 10000) {
+    for (const [key, value] of attempts) {
+      if (value.reset <= now) attempts.delete(key);
+    }
   }
+  let a = attempts.get(ip);
+  if (!a || a.reset < now) { a = { count: 0, reset: now + 15 * 60 * 1000 }; attempts.set(ip, a); }
+  if (a.count >= 5) return res.status(429).json({ error: 'Terlalu banyak percobaan. Coba lagi dalam 15 menit.' });
   const pw = String((req.body && req.body.password) || '');
-  if (!safeEqual(pw, ADMIN_PASSWORD)) return res.status(401).json({ error: 'Password salah.' });
-  await clearLimit(loginLimits, req.ip);
+  if (!safeEqual(pw, ADMIN_PASSWORD)) {
+    a.count++;
+    return res.status(401).json({ error: 'Password salah.' });
+  }
+  attempts.delete(ip);
+  if (sessions.size > 1000) {
+    for (const [session, expiresAt] of sessions) {
+      if (expiresAt <= now) sessions.delete(session);
+    }
+  }
   const token = crypto.randomBytes(32).toString('hex');
-  const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
-  await pool.query('DELETE FROM admin_sessions WHERE expires_at <= NOW()');
-  await pool.query(
-    'INSERT INTO admin_sessions (token_hash, expires_at) VALUES ($1, $2)',
-    [tokenHash, new Date(Date.now() + SESSION_MS)]
-  );
+  sessions.set(token, now + SESSION_MS);
   res.setHeader('Set-Cookie', cookie(token, SESSION_MS / 1000));
   res.json({ ok: true });
-}));
-app.post('/api/logout', asyncRoute(async (req, res) => {
+});
+app.post('/api/logout', (req, res) => {
   const token = getCookie(req, 'sid');
-  if (/^[a-f0-9]{64}$/.test(token || '')) {
-    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
-    await pool.query('DELETE FROM admin_sessions WHERE token_hash = $1', [tokenHash]);
-  }
+  if (token) sessions.delete(token);
   res.setHeader('Set-Cookie', cookie('', 0));
   res.json({ ok: true });
-}));
+});
 app.get('/api/admin/me', requireAdmin, (req, res) => res.json({ ok: true }));
+app.get('/api/admin/aktivitas', requireAdmin, asyncRoute(async (req, res) => {
+  const requestedLimit = Number(req.query.limit || 50);
+  if (!Number.isInteger(requestedLimit) || requestedLimit < 1 || requestedLimit > 100) {
+    throw httpError('Batas log harus berupa angka antara 1 dan 100.', 400);
+  }
+  const result = await pool.query(
+    `SELECT id, actor, action, detail, outcome, created_at AS "createdAt"
+     FROM admin_activity
+     ORDER BY created_at DESC, id DESC
+     LIMIT $1`,
+    [requestedLimit]
+  );
+  res.json({ items: result.rows });
+}));
+app.get('/api/admin/traffic', requireAdmin, asyncRoute(async (req, res) => {
+  const days = trafficDays(req.query.days);
+  const [daily, totals, pages, overview] = await Promise.all([
+    pool.query(
+      `WITH calendar AS (
+         SELECT generate_series(
+           (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Jakarta')::date - ($1::int - 1),
+           (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Jakarta')::date,
+           INTERVAL '1 day'
+         )::date AS day
+       ), visits AS (
+         SELECT (created_at AT TIME ZONE 'Asia/Jakarta')::date AS day,
+                COUNT(*)::int AS views,
+                COUNT(DISTINCT visitor_id)::int AS visitors
+         FROM traffic_page_views
+         WHERE created_at >= (((CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Jakarta')::date - ($1::int - 1))::timestamp AT TIME ZONE 'Asia/Jakarta')
+         GROUP BY 1
+       )
+       SELECT TO_CHAR(calendar.day, 'YYYY-MM-DD') AS date,
+              COALESCE(visits.views, 0)::int AS views,
+              COALESCE(visits.visitors, 0)::int AS visitors
+       FROM calendar LEFT JOIN visits USING (day)
+       ORDER BY calendar.day`,
+      [days]
+    ),
+    pool.query(
+      `SELECT COUNT(*)::int AS views, COUNT(DISTINCT visitor_id)::int AS visitors
+       FROM traffic_page_views
+      WHERE created_at >= (((CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Jakarta')::date - ($1::int - 1))::timestamp AT TIME ZONE 'Asia/Jakarta')`,
+      [days]
+    ),
+    pool.query(
+      `SELECT page_path AS path, COUNT(*)::int AS views,
+              COUNT(DISTINCT visitor_id)::int AS visitors
+       FROM traffic_page_views
+      WHERE created_at >= (((CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Jakarta')::date - ($1::int - 1))::timestamp AT TIME ZONE 'Asia/Jakarta')
+       GROUP BY page_path ORDER BY views DESC, path ASC LIMIT 5`,
+      [days]
+    ),
+    pool.query(
+      `WITH local_time AS (
+         SELECT (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Jakarta')::date AS today
+       )
+       SELECT
+         TO_CHAR(local_time.today, 'YYYY-MM-DD') AS local_date,
+         COUNT(*) FILTER (
+           WHERE visits.created_at >= (local_time.today::timestamp AT TIME ZONE 'Asia/Jakarta')
+         )::int AS today_views,
+         COUNT(DISTINCT visits.visitor_id) FILTER (
+           WHERE visits.created_at >= (local_time.today::timestamp AT TIME ZONE 'Asia/Jakarta')
+         )::int AS today_visitors,
+         COUNT(DISTINCT visits.visitor_id) FILTER (
+           WHERE visits.created_at >= ((local_time.today - 1)::timestamp AT TIME ZONE 'Asia/Jakarta')
+             AND visits.created_at < (local_time.today::timestamp AT TIME ZONE 'Asia/Jakarta')
+         )::int AS yesterday_visitors,
+         COUNT(*) FILTER (
+           WHERE visits.created_at >= (
+             date_trunc('month', local_time.today::timestamp) AT TIME ZONE 'Asia/Jakarta'
+           )
+         )::int AS month_views
+       FROM local_time
+       LEFT JOIN traffic_page_views AS visits ON TRUE
+       GROUP BY local_time.today`
+    )
+  ]);
+  res.json({
+    days,
+    daily: daily.rows,
+    totals: totals.rows[0],
+    topPages: pages.rows,
+    overview: overview.rows[0]
+  });
+}));
+app.get('/api/admin/traffic/export', requireAdmin, asyncRoute(async (req, res) => {
+  const days = trafficDays(req.query.days || 180);
+  const [traffic, activities] = await Promise.all([
+    pool.query(
+      `SELECT TO_CHAR((created_at AT TIME ZONE 'Asia/Jakarta')::date, 'YYYY-MM-DD') AS day,
+              page_path AS path, COUNT(*)::int AS views,
+              COUNT(DISTINCT visitor_id)::int AS visitors
+       FROM traffic_page_views
+      WHERE created_at >= (((CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Jakarta')::date - ($1::int - 1))::timestamp AT TIME ZONE 'Asia/Jakarta')
+       GROUP BY 1, 2 ORDER BY day DESC, views DESC`,
+      [days]
+    ),
+    pool.query(
+      `SELECT TO_CHAR(created_at AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD HH24:MI:SS') AS time,
+              actor, action, detail, outcome
+       FROM admin_activity
+       WHERE created_at >= (((CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Jakarta')::date - ($1::int - 1))::timestamp AT TIME ZONE 'Asia/Jakarta')
+       ORDER BY created_at DESC, id DESC`,
+      [days]
+    )
+  ]);
+  const rows = [
+    ['Waktu', 'Jenis log', 'Aktivitas/halaman', 'Ringkasan', 'Hasil', 'Pengunjung unik', 'Tampilan halaman'],
+    ...traffic.rows.map((row) => [row.day, 'Trafik web', row.path, '', '', row.visitors, row.views]),
+    ...activities.rows.map((row) => [row.time, row.actor, row.action, row.detail, row.outcome, '', ''])
+  ];
+  const csv = '\uFEFF' + rows.map((row) => row.map(csvCell).join(',')).join('\r\n');
+  res.set({
+    'Content-Type': 'text/csv; charset=utf-8',
+    'Content-Disposition': `attachment; filename="log-bakesbangpol-${days}-hari.csv"`,
+    'Cache-Control': 'no-store'
+  }).send(csv);
+}));
+app.post('/api/traffic', asyncRoute(async (req, res) => {
+  const origin = req.get('Origin');
+  if (origin) {
+    let originHost;
+    try { originHost = new URL(origin).host; }
+    catch { throw httpError('Asal permintaan tidak diizinkan.', 403); }
+    if (originHost !== req.get('host')) throw httpError('Asal permintaan tidak diizinkan.', 403);
+  }
+  const visitorId = typeof req.body?.visitorId === 'string' ? req.body.visitorId : '';
+  const pagePath = typeof req.body?.path === 'string' ? req.body.path : '';
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(visitorId) ||
+      !TRACKED_PUBLIC_PAGES.has(pagePath)) {
+    throw httpError('Data kunjungan tidak valid.', 400);
+  }
+  const now = Date.now();
+  let bucket = trafficBuckets.get(req.ip);
+  if (!bucket && trafficBuckets.size >= 10000) {
+    for (const [ip, value] of trafficBuckets) {
+      if (value.resetAt <= now) trafficBuckets.delete(ip);
+    }
+    if (trafficBuckets.size >= 10000) {
+      return res.status(429).json({ error: 'Batas pencatatan kunjungan tercapai.' });
+    }
+  }
+  if (!bucket || bucket.resetAt <= now) {
+    bucket = { count: 0, resetAt: now + 60 * 1000 };
+    trafficBuckets.set(req.ip, bucket);
+  }
+  if (bucket.count >= 60) return res.status(429).json({ error: 'Batas pencatatan kunjungan tercapai.' });
+  bucket.count++;
+  if (trafficBuckets.size > 10000) {
+    for (const [ip, value] of trafficBuckets) {
+      if (value.resetAt <= now) trafficBuckets.delete(ip);
+    }
+  }
+  await recordPageView(visitorId, pagePath);
+  res.status(202).json({ ok: true });
+}));
 app.get('/api/site-settings', asyncRoute(async (req, res) => {
   const { 'site-settings': saved } = await readState(['site-settings']);
   const settings = publicSiteSettings(saved);
@@ -481,8 +754,102 @@ app.put('/api/admin/site-settings', requireAdmin, asyncRoute(async (req, res) =>
   res.json({ ...settings, aiConfigured: Boolean(process.env.GROQ_API_KEY) });
 }));
 
+app.get('/api/admin/struktur', requireAdmin, asyncRoute(async (req, res) => {
+  const { struktur } = await readState(['struktur']);
+  if (!validStructure(struktur)) throw httpError('Data struktur organisasi tidak valid.', 503);
+  res.json(struktur);
+}));
+app.post('/api/admin/struktur', requireAdmin, uploadStructurePhoto, asyncRoute(async (req, res) => {
+  const { struktur: current } = await readState(['struktur']);
+  if (!validStructure(current)) {
+    if (req.file) removeUpload('/uploads/' + req.file.filename);
+    throw httpError('Data struktur organisasi tidak valid.', 503);
+  }
+  const { member: fields, errors } = validateStructureMember(req.body || {}, current.sections);
+  if (errors.length) {
+    if (req.file) removeUpload('/uploads/' + req.file.filename);
+    return res.status(400).json({ error: errors.join(' ') });
+  }
+  const member = {
+    id: crypto.randomBytes(12).toString('hex'),
+    ...fields,
+    photo: req.file ? '/uploads/' + req.file.filename : '',
+    order: current.members.filter((person) => person.sectionId === fields.sectionId)
+      .reduce((max, person) => Math.max(max, person.order), 0) + 1
+  };
+  try {
+    await updateState(['struktur'], (state) => {
+      if (!validStructure(state.struktur)) throw httpError('Data struktur organisasi tidak valid.', 503);
+      if (!state.struktur.sections.some((section) => section.id === fields.sectionId)) {
+        throw httpError('Bagian struktur tidak ditemukan.', 400);
+      }
+      state.struktur.members.push(member);
+    });
+  } catch (error) {
+    if (req.file) removeUpload('/uploads/' + req.file.filename);
+    throw error;
+  }
+  res.status(201).json(member);
+}));
+app.put('/api/admin/struktur/:id', requireAdmin, uploadStructurePhoto, asyncRoute(async (req, res) => {
+  const { struktur: current } = await readState(['struktur']);
+  if (!validStructure(current)) {
+    if (req.file) removeUpload('/uploads/' + req.file.filename);
+    throw httpError('Data struktur organisasi tidak valid.', 503);
+  }
+  const { member: fields, errors } = validateStructureMember(req.body || {}, current.sections);
+  if (errors.length) {
+    if (req.file) removeUpload('/uploads/' + req.file.filename);
+    return res.status(400).json({ error: errors.join(' ') });
+  }
+  if (req.body.removePhoto === 'true' && req.file) {
+    removeUpload('/uploads/' + req.file.filename);
+    return res.status(400).json({ error: 'Pilih foto baru atau hapus foto lama, bukan keduanya.' });
+  }
+  let previousPhoto = '';
+  let updated;
+  try {
+    updated = await updateState(['struktur'], (state) => {
+      if (!validStructure(state.struktur)) throw httpError('Data struktur organisasi tidak valid.', 503);
+      const person = state.struktur.members.find((item) => item.id === req.params.id);
+      if (!person) throw httpError('Anggota struktur tidak ditemukan.', 404);
+      previousPhoto = person.photo;
+      const nextOrder = person.sectionId === fields.sectionId
+        ? person.order
+        : state.struktur.members.filter((item) => item.sectionId === fields.sectionId)
+          .reduce((max, item) => Math.max(max, item.order), 0) + 1;
+      Object.assign(person, fields, {
+        photo: req.file ? '/uploads/' + req.file.filename : req.body.removePhoto === 'true' ? '' : person.photo,
+        order: nextOrder
+      });
+      return { ...person };
+    });
+  } catch (error) {
+    if (req.file) removeUpload('/uploads/' + req.file.filename);
+    throw error;
+  }
+  if (previousPhoto && previousPhoto !== updated.photo) {
+    const { struktur } = await readState(['struktur']);
+    if (!struktur.members.some((person) => person.photo === previousPhoto)) removeUpload(previousPhoto);
+  }
+  res.json(updated);
+}));
+app.delete('/api/admin/struktur/:id', requireAdmin, asyncRoute(async (req, res) => {
+  const removed = await updateState(['struktur'], (state) => {
+    if (!validStructure(state.struktur)) throw httpError('Data struktur organisasi tidak valid.', 503);
+    const index = state.struktur.members.findIndex((person) => person.id === req.params.id);
+    if (index < 0) throw httpError('Anggota struktur tidak ditemukan.', 404);
+    return state.struktur.members.splice(index, 1)[0];
+  });
+  if (removed.photo) {
+    const { struktur } = await readState(['struktur']);
+    if (!struktur.members.some((person) => person.photo === removed.photo)) removeUpload(removed.photo);
+  }
+  res.json({ ok: true });
+}));
+
 // Asisten AI: hanya mengirim satu pertanyaan ke model, tanpa menyimpan percakapan.
-const assistantBuckets = createLimitMap('assistant');
+const assistantBuckets = new Map();
 const assistantStopWords = new Set([
   'apa', 'apakah', 'bagaimana', 'berapa', 'bisa', 'dan', 'dari', 'di', 'dengan',
   'hal', 'ini', 'itu', 'ke', 'kapan', 'karena', 'mohon', 'pada', 'saya', 'siapa',
@@ -545,8 +912,21 @@ app.post('/api/asisten', asyncRoute(async (req, res) => {
   if (!readSiteSettings(savedSettings).assistantEnabled) {
     return res.status(503).json({ error: 'Asisten informasi sedang dinonaktifkan oleh pengelola situs.' });
   }
-  if (!await consumeLimit(assistantBuckets, req.ip, 10, 60 * 1000)) {
+  const now = Date.now();
+  const ip = req.ip;
+  let bucket = assistantBuckets.get(ip);
+  if (!bucket || bucket.resetAt <= now) {
+    bucket = { count: 0, resetAt: now + 60 * 1000 };
+    assistantBuckets.set(ip, bucket);
+  }
+  if (bucket.count >= 10) {
     return res.status(429).json({ error: 'Batas pertanyaan tercapai. Coba lagi sebentar.' });
+  }
+  bucket.count++;
+  if (assistantBuckets.size > 1000) {
+    for (const [key, value] of assistantBuckets) {
+      if (value.resetAt <= now) assistantBuckets.delete(key);
+    }
   }
 
   const question = String((req.body && req.body.question) || '').replace(/[\u0000-\u001f\u007f]/g, ' ').trim();
@@ -658,6 +1038,13 @@ app.post('/api/asisten', asyncRoute(async (req, res) => {
 // Publik: daftar & detail berita
 app.get('/api/kategori', (req, res) => res.json(KATEGORI));
 
+app.get('/api/struktur', asyncRoute(async (req, res) => {
+  const { struktur } = await readState(['struktur']);
+  if (!validStructure(struktur)) throw httpError('Data struktur organisasi tidak valid.', 503);
+  res.set('Cache-Control', 'no-store');
+  res.json(struktur);
+}));
+
 app.get('/api/dokumentasi', asyncRoute(async (req, res) => {
   const kategori = String(req.query.kategori || '');
   const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 50, 1), 100);
@@ -719,7 +1106,7 @@ app.post('/api/berita/:id/komentar', asyncRoute(async (req, res) => {
   if (!berita.some((news) => news.id === newsId)) {
     return res.status(404).json({ error: 'Berita tidak ditemukan.' });
   }
-  if (!await consumeLimit(commentLimits, req.ip, 5, 10 * 60 * 1000)) {
+  if (!consumeLimit(commentLimits, req.ip, 5, 10 * 60 * 1000)) {
     return res.status(429).json({ error: 'Terlalu banyak komentar. Silakan coba lagi nanti.' });
   }
   const nama = String((req.body && req.body.nama) || '').trim();
@@ -768,7 +1155,7 @@ app.post('/api/komentar/:id/reaksi', asyncRoute(async (req, res) => {
   if (!['suka', 'tidak-suka'].includes(value)) {
     return res.status(400).json({ error: 'Reaksi tidak valid.' });
   }
-  if (!await consumeLimit(reactionLimits, req.ip, 60, 10 * 60 * 1000)) {
+  if (!consumeLimit(reactionLimits, req.ip, 60, 10 * 60 * 1000)) {
     return res.status(429).json({ error: 'Terlalu banyak reaksi. Silakan coba lagi nanti.' });
   }
   const visitor = visitorKey(req, res);
@@ -798,7 +1185,7 @@ app.post('/api/komentar/:id/laporan', asyncRoute(async (req, res) => {
     !initialState.berita.some((news) => news.id === initialItem.beritaId)) {
     return res.status(404).json({ error: 'Komentar tidak ditemukan.' });
   }
-  if (!await consumeLimit(reportLimits, req.ip, 10, 10 * 60 * 1000)) {
+  if (!consumeLimit(reportLimits, req.ip, 10, 10 * 60 * 1000)) {
     return res.status(429).json({ error: 'Terlalu banyak laporan. Silakan coba lagi nanti.' });
   }
   const reason = String((req.body && req.body.alasan) || '');
@@ -962,21 +1349,16 @@ app.post('/api/berita', requireAdmin, uploadImage, asyncRoute(async (req, res) =
     return res.status(400).json({ error: v.errors.join(' ') });
   }
   const cover = coverFile(req);
-  let uploadedImages = [];
-  let item;
+  const item = {
+    id: Date.now().toString(36) + crypto.randomBytes(2).toString('hex'),
+    judul: v.judul, kategori: v.kategori, tanggal: v.tanggal, isi: v.isi,
+    gambar: cover ? '/uploads/' + cover.filename : '',
+    galeri: galleryFiles(req).map((f) => '/uploads/' + f.filename),
+    createdAt: new Date().toISOString()
+  };
   try {
-    uploadedImages = await saveUploadedFiles([cover, ...galleryFiles(req)].filter(Boolean));
-    let imageIndex = 0;
-    item = {
-      id: Date.now().toString(36) + crypto.randomBytes(2).toString('hex'),
-      judul: v.judul, kategori: v.kategori, tanggal: v.tanggal, isi: v.isi,
-      gambar: cover ? uploadedImages[imageIndex++] : '',
-      galeri: galleryFiles(req).map(() => uploadedImages[imageIndex++]),
-      createdAt: new Date().toISOString()
-    };
     await updateState(['berita'], (state) => state.berita.push(item));
   } catch (error) {
-    await removeUploadedFiles(uploadedImages);
     discardUploads(req);
     throw error;
   }
@@ -995,13 +1377,8 @@ app.put('/api/berita/:id', requireAdmin, uploadImage, asyncRoute(async (req, res
     return res.status(400).json({ error: v.errors.join(' ') });
   }
   const oldUploads = [];
-  let uploadedImages = [];
   let updated;
   try {
-    const cover = coverFile(req);
-    uploadedImages = await saveUploadedFiles([cover, ...galleryFiles(req)].filter(Boolean));
-    const newCover = cover ? uploadedImages[0] : '';
-    const newGallery = uploadedImages.slice(cover ? 1 : 0);
     updated = await updateState(['berita'], (state) => {
       const idx = state.berita.findIndex((item) => item.id === req.params.id);
       if (idx === -1) throw httpError('Berita tidak ditemukan.', 404);
@@ -1009,15 +1386,16 @@ app.put('/api/berita/:id', requireAdmin, uploadImage, asyncRoute(async (req, res
       const oldGaleri = old.galeri || [];
       const hapus = [].concat(req.body.hapus_galeri || []).filter((item) => oldGaleri.includes(item));
       const sisa = oldGaleri.filter((item) => !hapus.includes(item));
-      const baru = newGallery;
+      const baru = galleryFiles(req).map((file) => '/uploads/' + file.filename);
       if (sisa.length + baru.length > MAX_GALERI) {
         throw httpError(`Maksimal ${MAX_GALERI} foto galeri per berita.`, 400);
       }
       const removedGallery = oldGaleri.filter((item) => !sisa.includes(item));
       let gambar = old.gambar;
+      const cover = coverFile(req);
       if (cover) {
         if (old.gambar) oldUploads.push(old.gambar);
-        gambar = newCover;
+        gambar = '/uploads/' + cover.filename;
       } else if (req.body.hapus_gambar === 'on') {
         if (old.gambar) oldUploads.push(old.gambar);
         gambar = '';
@@ -1035,11 +1413,10 @@ app.put('/api/berita/:id', requireAdmin, uploadImage, asyncRoute(async (req, res
       return state.berita[idx];
     });
   } catch (error) {
-    await removeUploadedFiles(uploadedImages);
     discardUploads(req);
     throw error;
   }
-  await removeImagesNoLongerUsed(oldUploads);
+  oldUploads.forEach(removeUpload);
   res.json(updated);
 }));
 
@@ -1055,7 +1432,8 @@ app.delete('/api/berita/:id', requireAdmin, asyncRoute(async (req, res) => {
     state.komentar.reports = state.komentar.reports.filter((report) => report.beritaId !== req.params.id);
     return item;
   });
-  await removeImagesNoLongerUsed([removed.gambar, ...(removed.galeri || [])]);
+  removeUpload(removed.gambar);
+  (removed.galeri || []).forEach(removeUpload);
   res.json({ ok: true });
 }));
 
@@ -1064,35 +1442,44 @@ app.get('/api/admin/dokumentasi', requireAdmin, asyncRoute(async (req, res) => {
   res.json({ items, total: items.length });
 }));
 
-app.post('/api/admin/dokumentasi', requireAdmin, uploadDocumentationImage, asyncRoute(async (req, res) => {
+app.post('/api/admin/dokumentasi', requireAdmin, uploadDocumentationImages, asyncRoute(async (req, res) => {
   const { dokumentasi, errors } = validateDocumentation(req.body || {});
   if (errors.length) {
-    discardFile(req.file);
+    discardDocumentationUploads(req);
     return res.status(400).json({ error: errors.join(' ') });
   }
-  const [gambar] = await saveUploadedFiles([req.file]);
+  const gambar = req.files.map((file) => '/uploads/' + file.filename);
   const item = {
     id: crypto.randomBytes(12).toString('hex'),
     ...dokumentasi,
-    gambar,
+    gambar: gambar[0],
+    galeri: gambar.slice(1),
     createdAt: new Date().toISOString()
   };
   try {
     await updateState(['dokumentasi'], (state) => state.dokumentasi.push(item));
   } catch (error) {
-    await removeUploadedFiles([item.gambar]);
+    gambar.forEach(removeUpload);
     throw error;
   }
   res.status(201).json(item);
 }));
 
 app.delete('/api/admin/dokumentasi/:id', requireAdmin, asyncRoute(async (req, res) => {
-  const removed = await updateState(['berita', 'dokumentasi'], (state) => {
+  const removed = await updateState(['dokumentasi'], (state) => {
     const index = state.dokumentasi.findIndex((item) => item.id === req.params.id);
     if (index < 0) throw httpError('Dokumentasi tidak ditemukan.', 404);
     return state.dokumentasi.splice(index, 1)[0];
   });
-  await removeImagesNoLongerUsed([removed.gambar]);
+  const { berita, dokumentasi } = await readState(['berita', 'dokumentasi']);
+  const usedPhotos = new Set(dokumentasi.flatMap((item) => [item.gambar, ...(item.galeri || [])]));
+  berita.forEach((item) => {
+    if (item.gambar) usedPhotos.add(item.gambar);
+    (item.galeri || []).forEach((image) => usedPhotos.add(image));
+  });
+  [removed.gambar, ...(removed.galeri || [])]
+    .filter((image) => image && !usedPhotos.has(image))
+    .forEach(removeUpload);
   res.json({ ok: true });
 }));
 
@@ -1110,18 +1497,26 @@ app.use((error, req, res, next) => {
 
 async function start() {
   await verifyState();
+  await Promise.all([
+    pool.query("DELETE FROM traffic_page_views WHERE created_at < NOW() - INTERVAL '180 days'"),
+    pool.query("DELETE FROM admin_activity WHERE created_at < NOW() - INTERVAL '180 days'")
+  ]);
+  const trafficCleanupTimer = setInterval(() => {
+    Promise.all([
+      pool.query("DELETE FROM traffic_page_views WHERE created_at < NOW() - INTERVAL '180 days'"),
+      pool.query("DELETE FROM admin_activity WHERE created_at < NOW() - INTERVAL '180 days'")
+    ])
+      .catch((error) => console.error(`[Traffic] Gagal membersihkan data kedaluwarsa: ${error.message}`));
+  }, 24 * 60 * 60 * 1000);
+  trafficCleanupTimer.unref();
   app.listen(PORT, () => console.log(`Website listening on port ${PORT} (admin: /admin/)`));
 }
 
-if (require.main === module) {
-  start().catch((error) => {
-    console.error(`[Startup] ${error.message}`);
-    pool.end().catch((closeError) => {
-      console.error(`[PostgreSQL] Gagal menutup koneksi: ${closeError.message}`);
-    }).finally(() => {
-      process.exitCode = 1;
-    });
+start().catch((error) => {
+  console.error(`[Startup] ${error.message}`);
+  pool.end().catch((closeError) => {
+    console.error(`[PostgreSQL] Gagal menutup koneksi: ${closeError.message}`);
+  }).finally(() => {
+    process.exitCode = 1;
   });
-}
-
-module.exports = app;
+});

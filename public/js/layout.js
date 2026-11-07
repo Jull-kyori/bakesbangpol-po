@@ -33,16 +33,20 @@
 
   function cardBerita(b, big) {
     const img = b.gambar
-      ? `<img src="${esc(b.gambar)}" alt="" loading="lazy" decoding="async" class="${big ? 'h-64' : 'h-44'} w-full object-cover">`
-      : `<div class="flex ${big ? 'h-64' : 'h-44'} items-center justify-center bg-primary/15 font-display text-5xl font-bold text-primary-dark">B</div>`;
-    return `<a href="/berita-detail.html?id=${encodeURIComponent(b.id)}" class="group flex flex-col overflow-hidden rounded-xl bg-white ring-1 ring-ink/10 transition hover:ring-2 hover:ring-primary ${big ? 'lg:col-span-2' : ''}">
-      ${img}
-      <div class="flex flex-1 flex-col p-5">
-        <p class="text-sm font-semibold text-primary-dark">${esc(b.kategori)}</p>
-        <h3 class="mt-1 ${big ? 'text-2xl' : 'text-lg'} font-bold leading-snug text-ink group-hover:text-accent">${esc(b.judul)}</h3>
-        <p class="mt-2 line-clamp-2 text-sm text-slate-600">${esc(b.ringkasan)}</p>
-        <p class="mt-auto pt-4 text-sm text-slate-500">${tanggal(b.tanggal)}</p>
-      </div>
+      ? `<img src="${esc(b.gambar)}" alt="" width="1280" height="800" sizes="${big ? '(min-width: 1024px) 55vw, 100vw' : '(min-width: 1024px) 33vw, 100vw'}" loading="lazy" decoding="async" class="news-card__image h-full w-full object-cover">`
+      : `<div class="flex h-full min-h-44 items-center justify-center bg-linear-to-br from-sky-100 to-emerald-50 font-display text-5xl font-bold text-primary-dark" aria-hidden="true">B</div>`;
+    return `<a href="/berita-detail.html?id=${encodeURIComponent(b.id)}" class="news-card ${big ? 'news-card__featured lg:col-span-2' : ''} group flex flex-col overflow-hidden rounded-2xl bg-white transition hover:-translate-y-1">
+      <span class="news-card__media relative block overflow-hidden bg-sky-50">
+        ${img}
+        <span class="absolute inset-0 bg-linear-to-t from-ink/45 via-transparent to-transparent" aria-hidden="true"></span>
+        <span class="absolute bottom-3 left-3 rounded-full border border-white/40 bg-white/90 px-3 py-1 text-xs font-semibold text-ink backdrop-blur">${esc(b.kategori)}</span>
+      </span>
+      <span class="news-card__body flex flex-1 flex-col p-5">
+        <span class="text-xs font-medium text-slate-500">${tanggal(b.tanggal)}</span>
+        <span class="mt-2 block ${big ? 'text-xl sm:text-2xl' : 'text-lg'} font-bold leading-snug text-ink group-hover:text-primary-dark">${esc(b.judul)}</span>
+        <span class="mt-2 line-clamp-3 text-sm leading-relaxed text-slate-600">${esc(b.ringkasan)}</span>
+        <span class="mt-auto inline-flex items-center gap-2 pt-5 text-sm font-bold text-primary-dark">Baca selengkapnya <span aria-hidden="true" class="transition-transform group-hover:translate-x-1">→</span></span>
+      </span>
     </a>`;
   }
 
@@ -64,7 +68,7 @@
       KATEGORI.map((k) => [k, '/berita.html?kategori=' + encodeURIComponent(k)])) },
     { t: 'Dokumentasi', h: '/#dokumentasi', spy: 'dokumentasi' },
     { t: 'Paskibraka BPIP', h: 'https://paskibraka.bpip.go.id/', external: true },
-    { t: 'Aspirasi', h: '/aspirasi.html' },
+    { t: 'Aspirasi', h: '/#aspirasi', spy: 'aspirasi' },
     { t: 'Kontak', h: '#kontak' }
   ];
   const chevron = (cls) => `<svg class="h-3 w-3 transition-transform duration-200 ${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>`;
@@ -85,14 +89,17 @@
     panel.classList.add('hidden');
     toggle.setAttribute('aria-expanded', 'false');
     toggle.setAttribute('aria-label', 'Buka menu');
+    const bottomMenuButton = document.querySelector('[data-bottom-menu]');
+    if (bottomMenuButton) bottomMenuButton.setAttribute('aria-expanded', 'false');
   }
 
   const header = document.getElementById('site-header');
   if (header) {
+    document.body.classList.add('public-site');
     const overlay = header.dataset.variant === 'overlay';
     header.className = overlay
-      ? 'fixed inset-x-0 top-0 z-30 text-white transition-all duration-300'
-      : 'sticky top-0 z-30 bg-ink text-white shadow';
+      ? 'glass-header glass-header--overlay fixed inset-x-0 top-0 z-30 text-white transition-all duration-300'
+      : 'glass-header sticky top-0 z-30 text-white transition-all duration-300';
 
     // Menu desktop: submenu meluncur turun saat disorot kursor atau difokus keyboard
     const desktop = MENU.map((m) => {
@@ -138,7 +145,7 @@
           <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
         </button>
       </div>
-      <nav id="menu-panel" class="absolute inset-x-0 top-full z-40 hidden max-h-[calc(100dvh-4rem)] overflow-y-auto bg-ink px-6 pb-5 shadow-2xl xl:hidden" aria-label="Menu seluler">${mobile}</nav>`;
+      <nav id="menu-panel" class="glass-panel absolute inset-x-0 top-full z-40 hidden max-h-[calc(100dvh-4rem)] overflow-y-auto px-6 pb-5 shadow-2xl xl:hidden" aria-label="Menu seluler">${mobile}</nav>`;
 
     const btn = document.getElementById('menu-btn');
     const panel = document.getElementById('menu-panel');
@@ -146,6 +153,8 @@
       const open = panel.classList.toggle('hidden') === false;
       btn.setAttribute('aria-expanded', String(open));
       btn.setAttribute('aria-label', open ? 'Tutup menu' : 'Buka menu');
+      const bottomMenuButton = document.querySelector('[data-bottom-menu]');
+      if (bottomMenuButton) bottomMenuButton.setAttribute('aria-expanded', String(open));
       if (open) closeFloatingPanels();
     });
     panel.addEventListener('click', (e) => {
@@ -159,7 +168,9 @@
       panel.classList.add('hidden');
       btn.setAttribute('aria-expanded', 'false');
       btn.setAttribute('aria-label', 'Buka menu');
-      btn.focus();
+      const bottomMenuButton = document.querySelector('[data-bottom-menu]');
+      if (bottomMenuButton) bottomMenuButton.setAttribute('aria-expanded', 'false');
+      (getComputedStyle(btn).display === 'none' && bottomMenuButton ? bottomMenuButton : btn).focus();
     });
 
     // Di beranda: menu transparan di atas hero, lalu menjadi solid dan lebih ramping saat di-scroll
@@ -167,9 +178,7 @@
       const bar = document.getElementById('header-bar');
       const onScroll = () => {
         const s = scrollY > 40;
-        header.classList.toggle('bg-ink/95', s);
-        header.classList.toggle('shadow-lg', s);
-        header.classList.toggle('backdrop-blur', s);
+        header.classList.toggle('is-scrolled', s);
         bar.classList.toggle('py-3', !s);
         bar.classList.toggle('sm:py-4', !s);
         bar.classList.toggle('py-2.5', s);
@@ -177,6 +186,58 @@
       addEventListener('scroll', onScroll, { passive: true });
       onScroll();
     }
+
+    const bottomNav = document.createElement('nav');
+    bottomNav.className = 'mobile-bottom-nav';
+    bottomNav.setAttribute('aria-label', 'Navigasi utama seluler');
+    bottomNav.innerHTML = `
+      <a href="/" data-bottom-nav="home">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg>
+        <span>Beranda</span>
+      </a>
+      <a href="/#beranda-cari" data-bottom-nav="search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+        <span>Cari</span>
+      </a>
+      <a href="/berita.html" data-bottom-nav="news">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h14a2 2 0 0 1 2 2v14H5a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3Z"/><path d="M5 4v13a3 3 0 0 0 3 3M9 8h8M9 12h8M9 16h5"/></svg>
+        <span>Berita</span>
+      </a>
+      <a href="/#dokumentasi" data-bottom-nav="docs">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+        <span>Dokumentasi</span>
+      </a>
+      <button type="button" data-bottom-menu aria-label="Buka menu lainnya" aria-controls="menu-panel" aria-expanded="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg>
+        <span>Menu</span>
+      </button>`;
+    document.body.appendChild(bottomNav);
+
+    function updateBottomNav() {
+      const currentPath = location.pathname;
+      const hash = location.hash;
+      const active = hash === '#beranda-cari' ? 'search'
+        : hash === '#dokumentasi' ? 'docs'
+          : currentPath === '/berita.html' || currentPath === '/berita-detail.html' ? 'news'
+            : currentPath === '/' ? 'home' : '';
+      bottomNav.querySelectorAll('a[data-bottom-nav]').forEach((link) => {
+        if (link.dataset.bottomNav === active) link.setAttribute('aria-current', 'page');
+        else link.removeAttribute('aria-current');
+      });
+    }
+    updateBottomNav();
+    addEventListener('hashchange', updateBottomNav);
+    addEventListener('popstate', updateBottomNav);
+    bottomNav.querySelector('[data-bottom-menu]').addEventListener('click', () => {
+      btn.click();
+      const open = btn.getAttribute('aria-expanded') === 'true';
+      bottomNav.querySelector('[data-bottom-menu]').setAttribute('aria-expanded', String(open));
+      if (open) panel.scrollTop = 0;
+    });
+    panel.addEventListener('click', (event) => {
+      if (!event.target.closest('a')) return;
+      bottomNav.querySelector('[data-bottom-menu]').setAttribute('aria-expanded', 'false');
+    });
   }
 
   // ---- Footer ----
@@ -207,7 +268,7 @@
             <li><a class="hover:text-primary" href="/#struktur">Struktur organisasi</a></li>
             <li><a class="hover:text-primary" href="/berita.html">Berita</a></li>
             <li><a class="hover:text-primary" href="/#dokumentasi">Dokumentasi kegiatan</a></li>
-            <li><a class="hover:text-primary" href="/aspirasi.html">Panduan aspirasi/pengaduan</a></li>
+            <li><a class="hover:text-primary" href="/#aspirasi">Aspirasi dan pengaduan</a></li>
             <li><a class="hover:text-primary" href="/kebijakan.html">Aturan komentar &amp; privasi</a></li>
           </ul>
         </div>
@@ -224,12 +285,26 @@
       <div class="border-t border-white/10 py-5 text-center text-sm text-white/60">
         &copy; ${new Date().getFullYear()} Bakesbangpol Kabupaten Ponorogo
       </div>`;
+    const socialBar = document.createElement('div');
+    socialBar.className = 'border-y border-slate-200 bg-slate-100 px-4 py-2.5 text-ink';
+    socialBar.innerHTML = `
+      <nav class="mx-auto flex max-w-7xl items-center justify-center gap-5" aria-label="Media sosial resmi Bakesbangpol Kabupaten Ponorogo">
+        <a href="https://www.instagram.com/bakesbangpol_ponorogo/" target="_blank" rel="noopener noreferrer" aria-label="Instagram Bakesbangpol Kabupaten Ponorogo (buka di tab baru)" class="inline-flex items-center gap-1.5 rounded px-1.5 py-1 text-xs font-semibold text-slate-600 transition hover:text-primary-dark focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-dark">
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r=".75" fill="currentColor" stroke="none"/></svg>
+          <span>Instagram</span>
+        </a>
+        <a href="https://www.tiktok.com/@bakesbangpol_ponorogo" target="_blank" rel="noopener noreferrer" aria-label="TikTok Bakesbangpol Kabupaten Ponorogo (buka di tab baru)" class="inline-flex items-center gap-1.5 rounded px-1.5 py-1 text-xs font-semibold text-slate-600 transition hover:text-primary-dark focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-dark">
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4v10.5a4.5 4.5 0 1 1-4-4.47"/><path d="M14 4c.5 3 2.5 5 5 5"/></svg>
+          <span>TikTok</span>
+        </a>
+      </nav>`;
+    footer.parentNode.insertBefore(socialBar, footer);
   }
 
   // ---- Aksesibilitas dan asisten panduan ----
   const widget = document.createElement('div');
   widget.innerHTML = `
-    <div class="fixed bottom-4 left-4 z-[60]">
+    <div id="aksesibilitas-widget" class="fixed bottom-4 left-4 z-60">
       <button id="aksesibilitas-toggle" type="button" aria-label="Buka pengaturan aksesibilitas" aria-expanded="false" aria-controls="aksesibilitas-panel" class="flex h-14 w-14 items-center justify-center rounded-full bg-ink text-white shadow-xl ring-2 ring-white transition hover:scale-105 hover:bg-primary-dark focus-visible:outline">
         <svg class="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="7" r="1"/><path d="M12 10v7m-4-7 4 2 4-2m-7 9 3-4 3 4"/></svg>
       </button>
@@ -252,7 +327,7 @@
         </div>
       </section>
     </div>
-    <div class="fixed bottom-4 right-4 z-[60]">
+    <div id="asisten-widget" class="fixed bottom-4 right-4 z-60">
       <button id="asisten-toggle" type="button" aria-label="Buka asisten informasi" aria-expanded="false" aria-controls="asisten-panel" class="flex h-14 w-14 items-center justify-center rounded-full bg-primary text-ink shadow-xl ring-2 ring-white transition hover:scale-105 hover:bg-accent hover:text-white">
         <svg class="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5H6l-3 2v-9.5A7.5 7.5 0 0 1 10.5 4h2A7.5 7.5 0 0 1 20 11.5Z"/><path d="M8 11h.01M12 11h.01M16 11h.01"/></svg>
       </button>
@@ -536,3 +611,65 @@
   fx.src = '/js/effects.js';
   fx.defer = true;
   document.body.appendChild(fx);
+
+  const analyticsKey = 'bakesbangpol-analytics-visitor';
+  const analyticsCreatedKey = 'bakesbangpol-analytics-created';
+  const analyticsOptOutKey = 'bakesbangpol-analytics-opt-out';
+  const trackedPages = new Set(['/', '/berita.html', '/berita-detail.html', '/aspirasi.html', '/kebijakan.html']);
+  function createAnalyticsId() {
+    const bytes = crypto.getRandomValues(new Uint8Array(16));
+    bytes[6] = (bytes[6] & 0x0f) | 0x40;
+    bytes[8] = (bytes[8] & 0x3f) | 0x80;
+    const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
+    return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+  }
+  function getAnalyticsVisitorId() {
+    let visitorId = localStorage.getItem(analyticsKey);
+    const createdAt = Number(localStorage.getItem(analyticsCreatedKey));
+    const expired = !Number.isFinite(createdAt) || Date.now() - createdAt > 180 * 24 * 60 * 60 * 1000;
+    if (expired || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(visitorId || '')) {
+      visitorId = createAnalyticsId();
+      localStorage.setItem(analyticsKey, visitorId);
+      localStorage.setItem(analyticsCreatedKey, String(Date.now()));
+    }
+    return visitorId;
+  }
+  function setAnalyticsPreference() {
+    const control = document.getElementById('analytics-opt-out');
+    const status = document.getElementById('analytics-preference-status');
+    if (!control) return;
+    const optedOut = localStorage.getItem(analyticsOptOutKey) === 'true';
+    control.textContent = optedOut ? 'Aktifkan pengukuran di browser ini' : 'Nonaktifkan pengukuran di browser ini';
+    control.setAttribute('aria-pressed', String(optedOut));
+    if (status) status.textContent = optedOut
+      ? 'Pengukuran trafik dinonaktifkan di browser ini.'
+      : 'Pengukuran trafik aktif di browser ini.';
+  }
+  try {
+    if (document.getElementById('analytics-opt-out')) {
+      setAnalyticsPreference();
+      document.getElementById('analytics-opt-out').addEventListener('click', () => {
+        try {
+          const optingOut = localStorage.getItem(analyticsOptOutKey) !== 'true';
+          localStorage.setItem(analyticsOptOutKey, String(optingOut));
+          if (optingOut) {
+            localStorage.removeItem(analyticsKey);
+            localStorage.removeItem(analyticsCreatedKey);
+          }
+          setAnalyticsPreference();
+        } catch (error) {
+          console.warn('Preferensi pengukuran trafik tidak dapat disimpan:', error);
+        }
+      });
+    }
+    if (trackedPages.has(location.pathname) && localStorage.getItem(analyticsOptOutKey) !== 'true') {
+      fetch('/api/traffic', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ visitorId: getAnalyticsVisitorId(), path: location.pathname }),
+        keepalive: true
+      }).catch((error) => console.warn('Pengukuran trafik gagal:', error));
+    }
+  } catch (error) {
+    console.warn('Pengukuran trafik tidak tersedia:', error);
+  }
