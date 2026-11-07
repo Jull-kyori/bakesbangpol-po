@@ -407,15 +407,10 @@
           </div>
         </fieldset>
 
-        <fieldset class="space-y-3 border-t border-ink/10 pt-5">
-          <legend class="text-lg font-bold text-ink">Asisten AI</legend>
-          <label class="flex items-center gap-3 text-sm font-semibold">
-            <input id="setting-assistant-enabled" name="assistantEnabled" type="checkbox" class="h-4 w-4" />
-            Tampilkan dan izinkan asisten AI
-          </label>
-          <p id="setting-ai-status" class="text-sm text-slate-600" role="status"></p>
-          <p class="text-sm text-slate-500">Kunci API tidak dapat dilihat atau diubah di dashboard. Pengelola server mengaturnya dengan aman melalui GROQ_API_KEY.</p>
-        </fieldset>
+        <div class="border-t border-ink/10 pt-5">
+          <h3 class="text-lg font-bold text-ink">FAQ situs</h3>
+          <p class="mt-1 text-sm leading-relaxed text-slate-600">FAQ menampilkan jawaban tetap tentang layanan dan navigasi situs. FAQ tidak mengirim pertanyaan ke layanan AI.</p>
+        </div>
 
         <div class="flex flex-wrap items-center gap-3 border-t border-ink/10 pt-5">
           <button id="save-site-settings" type="submit" class="rounded-lg bg-primary px-5 py-2.5 font-semibold text-ink hover:bg-accent hover:text-white">Simpan pengaturan</button>

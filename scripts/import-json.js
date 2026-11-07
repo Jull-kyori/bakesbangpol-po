@@ -16,8 +16,7 @@ const DEFAULT_SETTINGS = {
   email: '',
   serviceHours: '',
   announcementEnabled: false,
-  announcement: '',
-  assistantEnabled: true
+  announcement: ''
 };
 
 function option(name, fallback) {
@@ -123,7 +122,7 @@ for (const field of ['brandName', 'organizationName', 'district', 'address', 'ph
     throw new Error(`Pengaturan ${field} harus berupa teks.`);
   }
 }
-for (const field of ['announcementEnabled', 'assistantEnabled']) {
+for (const field of ['announcementEnabled']) {
   if (settings[field] !== undefined && typeof settings[field] !== 'boolean') {
     throw new Error(`Pengaturan ${field} harus berupa pilihan aktif/nonaktif.`);
   }

@@ -238,10 +238,6 @@
     $('#setting-hours').value = settings.serviceHours;
     $('#setting-announcement-enabled').checked = settings.announcementEnabled;
     $('#setting-announcement').value = settings.announcement;
-    $('#setting-assistant-enabled').checked = settings.assistantEnabled;
-    $('#setting-ai-status').textContent = settings.aiConfigured
-      ? 'Kunci AI terpasang di server. Status asisten dapat diubah di sini.'
-      : 'Kunci AI belum dikonfigurasi. Asisten hanya dapat menampilkan panduan lokal sampai pengelola server mengatur GROQ_API_KEY.';
   }
 
   async function loadActivity() {
@@ -653,8 +649,7 @@
       email: $('#setting-email').value,
       serviceHours: $('#setting-hours').value,
       announcementEnabled: $('#setting-announcement-enabled').checked,
-      announcement: $('#setting-announcement').value,
-      assistantEnabled: $('#setting-assistant-enabled').checked
+      announcement: $('#setting-announcement').value
     };
     try {
       await api('/api/admin/site-settings', {

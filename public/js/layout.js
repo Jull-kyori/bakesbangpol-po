@@ -10,11 +10,13 @@
     jam: '',
     announcementEnabled: false,
     announcement: '',
-    assistantEnabled: true
   };
 
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) =>
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  let mobileMenuCloseTimer;
+  let mobileMenuInertState = [];
+  let mobileMenuOpener = null;
 
   const mainContent = document.querySelector('main');
   if (mainContent && !mainContent.id) mainContent.id = 'main-content';
@@ -74,7 +76,7 @@
   const chevron = (cls) => `<svg class="h-3 w-3 transition-transform duration-200 ${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>`;
 
   function closeFloatingPanels() {
-    ['aksesibilitas-panel', 'asisten-panel'].forEach((id) => {
+    ['aksesibilitas-panel', 'faq-panel'].forEach((id) => {
       const panel = document.getElementById(id);
       const toggle = document.querySelector(`[aria-controls="${id}"]`);
       if (panel) panel.classList.add('hidden');
@@ -82,15 +84,33 @@
     });
   }
 
-  function closeMobileMenu() {
+  function closeMobileMenu(restoreFocus = false) {
     const panel = document.getElementById('menu-panel');
     const toggle = document.getElementById('menu-btn');
     if (!panel || !toggle) return;
-    panel.classList.add('hidden');
+    const backdrop = document.getElementById('menu-backdrop');
+    clearTimeout(mobileMenuCloseTimer);
+    panel.inert = true;
+    panel.setAttribute('aria-hidden', 'true');
+    panel.classList.add('-translate-x-full');
+    if (backdrop) {
+      backdrop.inert = true;
+      backdrop.setAttribute('aria-hidden', 'true');
+      backdrop.classList.add('opacity-0');
+      mobileMenuCloseTimer = setTimeout(() => backdrop.classList.add('hidden'), 300);
+    }
     toggle.setAttribute('aria-expanded', 'false');
     toggle.setAttribute('aria-label', 'Buka menu');
     const bottomMenuButton = document.querySelector('[data-bottom-menu]');
     if (bottomMenuButton) bottomMenuButton.setAttribute('aria-expanded', 'false');
+    document.body.classList.remove('public-menu-open');
+    mobileMenuInertState.forEach(([element, inert]) => { element.inert = inert; });
+    mobileMenuInertState = [];
+    if (restoreFocus && mobileMenuOpener && mobileMenuOpener.isConnected &&
+        !mobileMenuOpener.inert && mobileMenuOpener.offsetParent !== null) {
+      mobileMenuOpener.focus();
+    }
+    mobileMenuOpener = null;
   }
 
   const header = document.getElementById('site-header');
@@ -145,32 +165,101 @@
           <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
         </button>
       </div>
-      <nav id="menu-panel" class="glass-panel absolute inset-x-0 top-full z-40 hidden max-h-[calc(100dvh-4rem)] overflow-y-auto px-6 pb-5 shadow-2xl xl:hidden" aria-label="Menu seluler">${mobile}</nav>`;
+      `;
 
     const btn = document.getElementById('menu-btn');
-    const panel = document.getElementById('menu-panel');
-    btn.addEventListener('click', () => {
-      const open = panel.classList.toggle('hidden') === false;
+    const backdrop = document.createElement('button');
+    backdrop.id = 'menu-backdrop';
+    backdrop.type = 'button';
+    backdrop.setAttribute('aria-label', 'Tutup menu');
+    backdrop.setAttribute('aria-hidden', 'true');
+    backdrop.inert = true;
+    backdrop.className = 'mobile-menu-backdrop fixed inset-0 z-70 hidden bg-ink/35 opacity-0 backdrop-blur-sm transition-opacity duration-300 xl:hidden';
+
+    const panel = document.createElement('nav');
+    panel.id = 'menu-panel';
+    panel.setAttribute('aria-label', 'Menu seluler');
+    panel.setAttribute('aria-hidden', 'true');
+    panel.inert = true;
+    panel.className = 'mobile-menu-panel glass-panel fixed inset-y-0 left-0 z-80 flex w-[min(19rem,84vw)] -translate-x-full flex-col overflow-y-auto border-r border-white/15 px-4 py-5 text-white shadow-2xl transition-transform duration-300 xl:hidden';
+    panel.innerHTML = `
+      <div class="mb-6 flex items-start justify-between gap-3">
+        <a href="/" class="flex min-w-0 items-center gap-3" aria-label="Beranda Bakesbangpol Ponorogo">
+          <img src="/assets/img/logo.png" alt="" class="h-10 w-10 shrink-0 rounded-full bg-white/95 p-1 shadow-lg">
+          <span class="min-w-0 leading-tight">
+            <span data-site-brand class="block truncate text-[0.65rem] font-bold uppercase tracking-[0.16em] text-sky-200">BAKESBANGPOL</span>
+            <span data-site-district class="mt-1 block font-display text-sm font-bold">Kabupaten Ponorogo</span>
+          </span>
+        </a>
+        <button id="menu-close" type="button" aria-label="Tutup menu" class="rounded-lg p-2 text-white/75 transition hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
+          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m18 6-12 12M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="flex flex-col gap-1 text-sm font-semibold">${mobile}</div>`;
+    document.body.append(backdrop, panel);
+
+    function setMobileMenuOpen(open, opener = btn, restoreFocus = false) {
+      if (open) {
+        clearTimeout(mobileMenuCloseTimer);
+        mobileMenuOpener = opener;
+        backdrop.classList.remove('hidden');
+        backdrop.inert = false;
+        backdrop.setAttribute('aria-hidden', 'false');
+        panel.inert = false;
+        panel.setAttribute('aria-hidden', 'false');
+        mobileMenuInertState = Array.from(document.body.children)
+          .filter((element) => element !== backdrop && element !== panel)
+          .map((element) => {
+            const previousInert = element.inert;
+            element.inert = true;
+            return [element, previousInert];
+          });
+        document.body.classList.add('public-menu-open');
+        requestAnimationFrame(() => {
+          backdrop.classList.remove('opacity-0');
+          panel.classList.remove('-translate-x-full');
+        });
+        closeFloatingPanels();
+        document.getElementById('menu-close').focus();
+      } else {
+        closeMobileMenu(restoreFocus);
+      }
       btn.setAttribute('aria-expanded', String(open));
       btn.setAttribute('aria-label', open ? 'Tutup menu' : 'Buka menu');
       const bottomMenuButton = document.querySelector('[data-bottom-menu]');
       if (bottomMenuButton) bottomMenuButton.setAttribute('aria-expanded', String(open));
-      if (open) closeFloatingPanels();
+    }
+
+    btn.addEventListener('click', () => {
+      setMobileMenuOpen(btn.getAttribute('aria-expanded') !== 'true', btn, true);
     });
+    backdrop.addEventListener('click', () => setMobileMenuOpen(false, btn, true));
+    document.getElementById('menu-close').addEventListener('click', () => setMobileMenuOpen(false, btn, true));
     panel.addEventListener('click', (e) => {
       if (!e.target.closest('a')) return;
-      panel.classList.add('hidden');
-      btn.setAttribute('aria-expanded', 'false');
-      btn.setAttribute('aria-label', 'Buka menu');
+      setMobileMenuOpen(false, btn);
     });
     document.addEventListener('keydown', (event) => {
-      if (event.key !== 'Escape' || panel.classList.contains('hidden')) return;
-      panel.classList.add('hidden');
-      btn.setAttribute('aria-expanded', 'false');
-      btn.setAttribute('aria-label', 'Buka menu');
-      const bottomMenuButton = document.querySelector('[data-bottom-menu]');
-      if (bottomMenuButton) bottomMenuButton.setAttribute('aria-expanded', 'false');
-      (getComputedStyle(btn).display === 'none' && bottomMenuButton ? bottomMenuButton : btn).focus();
+      if (btn.getAttribute('aria-expanded') !== 'true') return;
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        setMobileMenuOpen(false, btn, true);
+        return;
+      }
+      if (event.key !== 'Tab') return;
+      const focusable = Array.from(panel.querySelectorAll('a[href], button:not([disabled])'));
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+      }
+    });
+    matchMedia('(min-width: 1280px)').addEventListener('change', (event) => {
+      if (event.matches && btn.getAttribute('aria-expanded') === 'true') setMobileMenuOpen(false, btn);
     });
 
     // Di beranda: menu transparan di atas hero, lalu menjadi solid dan lebih ramping saat di-scroll
@@ -228,15 +317,10 @@
     updateBottomNav();
     addEventListener('hashchange', updateBottomNav);
     addEventListener('popstate', updateBottomNav);
-    bottomNav.querySelector('[data-bottom-menu]').addEventListener('click', () => {
-      btn.click();
-      const open = btn.getAttribute('aria-expanded') === 'true';
-      bottomNav.querySelector('[data-bottom-menu]').setAttribute('aria-expanded', String(open));
+    bottomNav.querySelector('[data-bottom-menu]').addEventListener('click', (event) => {
+      const open = btn.getAttribute('aria-expanded') !== 'true';
+      setMobileMenuOpen(open, event.currentTarget, true);
       if (open) panel.scrollTop = 0;
-    });
-    panel.addEventListener('click', (event) => {
-      if (!event.target.closest('a')) return;
-      bottomNav.querySelector('[data-bottom-menu]').setAttribute('aria-expanded', 'false');
     });
   }
 
@@ -301,7 +385,7 @@
     footer.parentNode.insertBefore(socialBar, footer);
   }
 
-  // ---- Aksesibilitas dan asisten panduan ----
+  // ---- Aksesibilitas dan FAQ ----
   const widget = document.createElement('div');
   widget.innerHTML = `
     <div id="aksesibilitas-widget" class="fixed bottom-4 left-4 z-60">
@@ -327,28 +411,44 @@
         </div>
       </section>
     </div>
-    <div id="asisten-widget" class="fixed bottom-4 right-4 z-60">
-      <button id="asisten-toggle" type="button" aria-label="Buka asisten informasi" aria-expanded="false" aria-controls="asisten-panel" class="flex h-14 w-14 items-center justify-center rounded-full bg-primary text-ink shadow-xl ring-2 ring-white transition hover:scale-105 hover:bg-accent hover:text-white">
-        <svg class="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5H6l-3 2v-9.5A7.5 7.5 0 0 1 10.5 4h2A7.5 7.5 0 0 1 20 11.5Z"/><path d="M8 11h.01M12 11h.01M16 11h.01"/></svg>
+    <div id="faq-widget" class="fixed bottom-4 right-4 z-60">
+      <button id="faq-toggle" type="button" aria-label="Buka FAQ" aria-expanded="false" aria-controls="faq-panel" class="flex h-14 w-14 items-center justify-center rounded-full bg-primary text-ink shadow-xl ring-2 ring-white transition hover:scale-105 hover:bg-accent hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
+        <svg class="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.6 9a2.5 2.5 0 1 1 4.7 1.2c-.8 1.2-2.3 1.3-2.3 3"/><path d="M12 17h.01"/></svg>
       </button>
-      <section id="asisten-panel" aria-label="Asisten informasi Bakesbangpol" class="absolute bottom-16 right-0 hidden w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-2xl bg-white text-ink shadow-2xl ring-1 ring-ink/15">
+      <section id="faq-panel" aria-label="Pertanyaan yang sering diajukan" class="absolute bottom-16 right-0 hidden w-[min(24rem,calc(100vw-2rem))] overflow-hidden rounded-2xl bg-white text-ink shadow-2xl ring-1 ring-ink/15">
         <div class="flex items-center justify-between bg-ink px-4 py-3 text-white">
-          <div><h2 class="font-display font-bold">Asisten AI Bakesbangpol</h2><p class="text-xs text-white/75">Informasi situs dan pertanyaan umum</p></div>
-          <button id="asisten-close" type="button" aria-label="Tutup asisten" class="rounded-lg px-2 py-1 text-white/80 hover:bg-white/10">Tutup</button>
+          <div><h2 class="font-display font-bold">Pertanyaan umum</h2><p class="text-xs text-white/75">Informasi Bakesbangpol Ponorogo</p></div>
+          <button id="faq-close" type="button" aria-label="Tutup FAQ" class="rounded-lg px-2 py-1 text-white/80 hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">Tutup</button>
         </div>
-        <p class="border-b border-ink/10 bg-cream px-4 py-2 text-xs leading-relaxed text-slate-600">Pertanyaan dan konteks chat dikirim ke layanan AI Groq. Situs tidak menyimpan riwayat. Jangan kirim data pribadi atau rahasia; jawaban AI dapat keliru.</p>
-        <div id="asisten-pesan" class="flex max-h-[min(18rem,calc(100dvh-21rem))] min-h-32 flex-col gap-3 overflow-y-auto p-4" aria-live="polite">
-          <p class="max-w-[90%] self-start rounded-xl rounded-tl-sm bg-cream px-3 py-2 text-sm">Halo! Tanyakan apa saja dengan kalimatmu sendiri. Saya membantu soal Bakesbangpol berdasarkan informasi situs dan bisa menjawab pertanyaan umum. Tombol di bawah hanya contoh.</p>
-          <div class="flex flex-wrap gap-2">
-            <button type="button" data-tanya="Apa tugas Bakesbangpol?" class="rounded-full px-3 py-1.5 text-xs font-semibold text-primary-dark ring-1 ring-primary-dark/30 hover:bg-primary/15">Tugas Bakesbangpol</button>
-            <button type="button" data-tanya="Informasi berita" class="rounded-full px-3 py-1.5 text-xs font-semibold text-primary-dark ring-1 ring-primary-dark/30 hover:bg-primary/15">Berita</button>
+        <div class="max-h-[min(28rem,calc(100dvh-9rem))] overflow-y-auto p-4">
+          <div class="faq-list divide-y divide-ink/10">
+            <details>
+              <summary>Apa tugas Bakesbangpol?</summary>
+              <p>Bakesbangpol Kabupaten Ponorogo membantu urusan kesatuan bangsa dan politik, termasuk wawasan kebangsaan, politik dan organisasi kemasyarakatan, serta kewaspadaan nasional. Lihat <a href="/#profil">Profil</a> dan <a href="/#bidang">Bidang</a>.</p>
+            </details>
+            <details>
+              <summary>Apa saja bidang yang ada?</summary>
+              <p>Bidangnya meliputi Sekretariat; Ideologi dan Wawasan Kebangsaan; Politik Dalam Negeri dan Organisasi Kemasyarakatan; serta Kewaspadaan Nasional. <a href="/#bidang">Lihat informasi bidang</a>.</p>
+            </details>
+            <details>
+              <summary>Di mana saya dapat membaca berita?</summary>
+              <p>Berita dan pengumuman tersedia di halaman <a href="/berita.html">Berita</a>, termasuk pilihan kategori dan pencarian.</p>
+            </details>
+            <details>
+              <summary>Bagaimana cara menyampaikan aspirasi atau pengaduan?</summary>
+              <p>Situs ini tidak menerima pengaduan resmi secara langsung. Buka <a href="/aspirasi.html">Panduan Aspirasi</a> untuk memilih kanal yang sesuai.</p>
+            </details>
+            <details>
+              <summary>Bagaimana komentar dimoderasi?</summary>
+              <p>Komentar dan balasan pada berita ditinjau admin sebelum ditampilkan. Baca <a href="/kebijakan.html">aturan komentar dan privasi</a>.</p>
+            </details>
+            <details>
+              <summary>Bagaimana cara menghubungi Bakesbangpol?</summary>
+              <p id="faq-contact">Informasi alamat dan kontak tersedia di bagian bawah halaman. Jika belum tercantum, gunakan saluran resmi Pemerintah Kabupaten Ponorogo.</p>
+              <a href="/#kontak">Lihat informasi kontak</a>
+            </details>
           </div>
         </div>
-        <form id="asisten-form" class="flex gap-2 border-t border-ink/10 p-3">
-          <label for="asisten-input" class="sr-only">Tulis pertanyaan</label>
-          <input id="asisten-input" maxlength="300" autocomplete="off" required placeholder="Tanyakan apa saja..." class="min-w-0 flex-1 rounded-lg border border-ink/20 px-3 py-2 text-sm" />
-          <button class="rounded-lg bg-primary px-3 py-2 text-sm font-bold text-ink hover:bg-accent hover:text-white">Kirim</button>
-        </form>
       </section>
     </div>`;
   document.body.appendChild(widget);
@@ -367,16 +467,15 @@
         email: settings.email,
         jam: settings.serviceHours,
         announcementEnabled: settings.announcementEnabled,
-        announcement: settings.announcement,
-        assistantEnabled: settings.assistantEnabled
+        announcement: settings.announcement
       });
 
-      const brand = document.querySelector('[data-site-brand]');
-      const district = document.querySelector('[data-site-district]');
+      const brands = document.querySelectorAll('[data-site-brand]');
+      const districts = document.querySelectorAll('[data-site-district]');
       const organization = document.querySelector('[data-site-organization]');
       const footerDistrict = document.querySelector('[data-footer-district]');
-      if (brand) brand.textContent = SITE.brandName;
-      if (district) district.textContent = SITE.district;
+      brands.forEach((brand) => { brand.textContent = SITE.brandName; });
+      districts.forEach((district) => { district.textContent = SITE.district; });
       if (organization) organization.textContent = SITE.organizationName;
       if (footerDistrict) footerDistrict.textContent = SITE.district;
 
@@ -405,10 +504,9 @@
         banner.textContent = SITE.announcement;
       }
 
-      if (!SITE.assistantEnabled) {
-        document.getElementById('asisten-toggle').classList.add('hidden');
-        document.getElementById('asisten-panel').classList.add('hidden');
-      }
+      const faqContact = document.getElementById('faq-contact');
+      const contactDetails = [SITE.alamat, SITE.telepon, SITE.email, SITE.jam].filter(Boolean);
+      if (faqContact && contactDetails.length) faqContact.textContent = `Informasi kontak: ${contactDetails.join('; ')}.`;
     } catch (error) {
       console.warn(`[Pengaturan situs] Tidak dapat memuat pengaturan: ${error.message}`);
     }
@@ -443,8 +541,8 @@
     accessToggle.setAttribute('aria-expanded', String(open));
     if (open) {
       closeMobileMenu();
-      document.getElementById('asisten-panel').classList.add('hidden');
-      document.getElementById('asisten-toggle').setAttribute('aria-expanded', 'false');
+      faqPanel.classList.add('hidden');
+      faqToggle.setAttribute('aria-expanded', 'false');
     }
   });
   accessPanel.addEventListener('click', (event) => {
@@ -473,132 +571,29 @@
     }
   });
 
-  const assistantToggle = document.getElementById('asisten-toggle');
-  const assistantPanel = document.getElementById('asisten-panel');
-  const assistantInput = document.getElementById('asisten-input');
-  const assistantMessages = document.getElementById('asisten-pesan');
-  let assistantBusy = false;
-  const assistantHistory = [];
-  const addAssistantMessage = (text, user, sources = []) => {
-    const message = document.createElement('p');
-    message.textContent = text;
-    message.className = `max-w-[90%] whitespace-pre-line rounded-xl px-3 py-2 text-sm ${user ? 'self-end rounded-tr-sm bg-primary/25' : 'self-start rounded-tl-sm bg-cream'}`;
-    assistantMessages.appendChild(message);
-    if (sources.length) {
-      const links = document.createElement('div');
-      links.className = 'flex max-w-[90%] flex-wrap gap-2';
-      sources.forEach((source) => {
-        const link = document.createElement('a');
-        link.href = source.url;
-        link.textContent = source.title;
-        link.className = 'rounded-full px-2.5 py-1 text-xs font-semibold text-primary-dark underline ring-1 ring-primary-dark/20 hover:bg-primary/15';
-        links.appendChild(link);
-      });
-      assistantMessages.appendChild(links);
-    }
-    assistantMessages.scrollTop = assistantMessages.scrollHeight;
-  };
-  function answerAssistant(question) {
-    const q = question.toLowerCase();
-    if (/profil|tugas|fungsi|tentang|bakesbangpol/.test(q)) {
-      return 'Bakesbangpol Kabupaten Ponorogo membantu urusan kesatuan bangsa dan politik, termasuk wawasan kebangsaan, politik dan organisasi kemasyarakatan, serta kewaspadaan nasional. Lihat bagian Profil dan Bidang di halaman Beranda.';
-    }
-    if (/bidang|sekretariat|ormas|organisasi|politik|kewaspadaan|ideologi/.test(q)) {
-      return 'Informasi bidang tersedia di bagian Bidang pada Beranda: Sekretariat; Ideologi dan Wawasan Kebangsaan; Politik Dalam Negeri dan Ormas; serta Kewaspadaan Nasional.';
-    }
-    if (/berita|kabar|artikel/.test(q)) {
-      return 'Berita dan pengumuman dapat dibaca pada halaman Berita. Pilih menu Berita di bagian atas untuk melihat daftar dan kategori.';
-    }
-    if (/kontak|alamat|telepon|email|jam|hubungi/.test(q)) {
-      const contact = [SITE.alamat, SITE.telepon, SITE.email, SITE.jam].filter(Boolean).join('; ');
-      return contact
-        ? `Informasi kontak: ${contact}.`
-        : 'Informasi kontak belum dicantumkan. Gunakan saluran resmi Pemerintah Kabupaten Ponorogo.';
-    }
-    if (/komentar|balas|suka|lapor/.test(q)) {
-      return 'Pada halaman detail berita, Anda dapat mengirim komentar dengan nama tampilan. Komentar tampil setelah disetujui admin. Aturan dan privasi tersedia di halaman Kebijakan.';
-    }
-    if (/aspirasi|pengaduan|laporan resmi|lapor\\.go/.test(q)) {
-      return 'Panduan aspirasi dan pengaduan tersedia di halaman Aspirasi. Situs ini belum menerima pengaduan resmi secara langsung; gunakan SP4N-LAPOR atau kanal resmi instansi.';
-    }
-    if (/privasi|data pribadi|kebijakan|aturan komentar/.test(q)) {
-      return 'Aturan komentar dan informasi data yang digunakan tersedia di halaman Kebijakan dan Privasi.';
-    }
-    return 'Maaf, saya belum menemukan jawaban di panduan situs. Coba tanyakan tentang profil, bidang, berita, komentar, atau kontak.';
-  }
-  async function submitAssistant(question) {
-    const value = question.trim();
-    if (!value || assistantBusy) return;
-    assistantBusy = true;
-    addAssistantMessage(value, true);
-    const submitButton = document.querySelector('#asisten-form button');
-    assistantInput.disabled = true;
-    submitButton.disabled = true;
-    submitButton.textContent = '...';
-    try {
-      const response = await fetch('/api/asisten', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question: value, history: assistantHistory.slice(-6) })
-      });
-      const result = await response.json();
-      if (!response.ok) {
-        const fallback = answerAssistant(value);
-        addAssistantMessage(`${result.error || 'Asisten AI belum tersedia.'}${fallback ? `\n\nPanduan situs: ${fallback}` : ''}`, false);
-        assistantHistory.push({ role: 'user', content: value }, { role: 'assistant', content: result.error || fallback });
-      } else {
-        addAssistantMessage(result.answer, false, result.sources || []);
-        assistantHistory.push(
-          { role: 'user', content: value },
-          {
-            role: 'assistant',
-            content: result.answer,
-            sourceIds: (result.sources || []).map((source) => source.id)
-          }
-        );
-      }
-    } catch {
-      const fallback = answerAssistant(value);
-      addAssistantMessage(`Asisten tidak dapat terhubung ke server.${fallback ? ` Panduan situs: ${fallback}` : ''}`, false);
-      assistantHistory.push({ role: 'user', content: value }, { role: 'assistant', content: fallback });
-    } finally {
-      assistantBusy = false;
-      assistantInput.disabled = false;
-      submitButton.disabled = false;
-      submitButton.textContent = 'Kirim';
-      assistantMessages.scrollTop = assistantMessages.scrollHeight;
-    }
-  }
-  assistantToggle.addEventListener('click', () => {
-    const open = assistantPanel.classList.toggle('hidden') === false;
-    assistantToggle.setAttribute('aria-expanded', String(open));
+  const faqToggle = document.getElementById('faq-toggle');
+  const faqPanel = document.getElementById('faq-panel');
+  faqToggle.addEventListener('click', () => {
+    const open = faqPanel.classList.toggle('hidden') === false;
+    faqToggle.setAttribute('aria-expanded', String(open));
     if (open) {
       closeMobileMenu();
       accessPanel.classList.add('hidden');
       accessToggle.setAttribute('aria-expanded', 'false');
-      assistantInput.focus();
+      document.getElementById('faq-close').focus();
     }
   });
-  document.getElementById('asisten-close').addEventListener('click', () => {
-    assistantPanel.classList.add('hidden');
-    assistantToggle.setAttribute('aria-expanded', 'false');
-    assistantToggle.focus();
-  });
-  assistantMessages.addEventListener('click', (event) => {
-    const prompt = event.target.closest('[data-tanya]');
-    if (prompt) submitAssistant(prompt.dataset.tanya);
-  });
-  document.getElementById('asisten-form').addEventListener('submit', (event) => {
-    event.preventDefault();
-    submitAssistant(assistantInput.value);
-    assistantInput.value = '';
-    assistantInput.focus();
+  document.getElementById('faq-close').addEventListener('click', () => {
+    faqPanel.classList.add('hidden');
+    faqToggle.setAttribute('aria-expanded', 'false');
+    faqToggle.focus();
   });
   document.addEventListener('keydown', (event) => {
     if (event.key !== 'Escape') return;
-    if (!assistantPanel.classList.contains('hidden')) {
-      assistantPanel.classList.add('hidden');
-      assistantToggle.setAttribute('aria-expanded', 'false');
+    if (!faqPanel.classList.contains('hidden')) {
+      faqPanel.classList.add('hidden');
+      faqToggle.setAttribute('aria-expanded', 'false');
+      faqToggle.focus();
     }
     if (!accessPanel.classList.contains('hidden')) {
       accessPanel.classList.add('hidden');

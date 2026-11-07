@@ -558,6 +558,7 @@ html { scroll-padding-top: 5rem; } /* anchor tidak tertutup menu yang menempel *
     line-height: 1.55;
     padding-inline: .25rem;
   }
+  body.public-menu-open { overflow: hidden; }
   .login-page {
     background:
       radial-gradient(50rem 28rem at 5% 0%, rgb(14 165 233 / .11), transparent 70%),
@@ -771,10 +772,45 @@ html.a11y-links a:not([class*="no-underline"]) {
 
 @media (max-width: 639px) {
   #aksesibilitas-toggle,
-  #asisten-toggle { width: 3rem; height: 3rem; }
+  #faq-toggle { width: 3rem; height: 3rem; }
   #aksesibilitas-panel,
-  #asisten-panel { bottom: 3.75rem; max-height: calc(100dvh - 6rem); overflow-y: auto; }
+  #faq-panel { bottom: 3.75rem; max-height: calc(100dvh - 6rem); overflow-y: auto; }
   #aksesibilitas-panel { width: min(18rem, calc(100vw - 2rem)); }
+}
+
+.faq-list summary {
+  cursor: pointer;
+  padding: .8rem 1.8rem .8rem 0;
+  color: var(--color-ink);
+  font-size: .875rem;
+  font-weight: 650;
+  line-height: 1.4;
+  list-style: none;
+}
+.faq-list summary::-webkit-details-marker { display: none; }
+.faq-list summary::after {
+  content: "+";
+  float: right;
+  margin-right: -1.3rem;
+  color: var(--color-primary-dark);
+  font-size: 1.1rem;
+  line-height: 1;
+}
+.faq-list details[open] summary::after { content: "−"; }
+.faq-list details > p,
+.faq-list details > a {
+  color: #475569;
+  font-size: .8125rem;
+  line-height: 1.6;
+}
+.faq-list details > p { padding: 0 0 .75rem; }
+.faq-list details > a {
+  display: inline-block;
+  margin: 0 0 .75rem;
+  color: var(--color-primary-dark);
+  font-weight: 650;
+  text-decoration: underline;
+  text-underline-offset: .15em;
 }
 
 @media (max-width: 767px) {
@@ -921,16 +957,8 @@ html.a11y-links a:not([class*="no-underline"]) {
   .mobile-bottom-nav a:active,
   .mobile-bottom-nav button:active { background: rgb(14 165 233 / .18); }
   #menu-btn { display: none; }
-  #menu-panel {
-    max-height: calc(100dvh - 8rem);
-    border: 1px solid rgb(255 255 255 / .18);
-    border-radius: 0 0 1.25rem 1.25rem;
-    background: rgb(18 48 71 / .9);
-    -webkit-backdrop-filter: saturate(160%) blur(22px);
-    backdrop-filter: saturate(160%) blur(22px);
-  }
   #aksesibilitas-widget,
-  #asisten-widget { bottom: calc(5.2rem + env(safe-area-inset-bottom)); }
+  #faq-widget { bottom: calc(5.2rem + env(safe-area-inset-bottom)); }
 }
 
 @media (min-width: 1024px) {

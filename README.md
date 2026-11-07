@@ -1,6 +1,6 @@
 # Website Bakesbangpol Kabupaten Ponorogo
 
-Website publik dan panel pengelola berita berbasis HTML, Tailwind CSS, Express, dan PostgreSQL. Fitur mencakup berita dan komentar serta asisten informasi yang dapat memakai Groq API. E-IDI bukan bagian dari layanan Bakesbangpol ini dan dikembangkan sebagai aplikasi terpisah di repository `bakesbangpol-ponorogo-idi`.
+Website publik dan panel pengelola berita berbasis HTML, Tailwind CSS, Express, dan PostgreSQL. Fitur mencakup berita, komentar, serta FAQ dengan jawaban tetap. E-IDI bukan bagian dari layanan Bakesbangpol ini dan dikembangkan sebagai aplikasi terpisah di repository `bakesbangpol-ponorogo-idi`.
 
 ## Menjalankan secara lokal
 
@@ -15,7 +15,6 @@ Edit `.env` sebelum menjalankan server:
 
 - Ganti `ADMIN_PASSWORD` dengan password acak minimal 16 karakter.
 - Atur `DATABASE_URL` ke database PostgreSQL yang disediakan untuk aplikasi. Jangan masukkan kredensial database ke Git.
-- Atur `GROQ_API_KEY` jika ingin mengaktifkan jawaban generatif asisten. Jangan masukkan key ke kode, browser, atau Git.
 - Untuk pengembangan lokal melalui HTTP, `COOKIE_SECURE=false` dapat dipakai. Produksi wajib menggunakan HTTPS dan `COOKIE_SECURE=true`.
 
 ```powershell
@@ -33,7 +32,7 @@ Data runtime disimpan di PostgreSQL pada tabel `app_state` sebagai dokumen JSONB
 
 JSON lama hanya menjadi sumber impor satu kali. Perintah impor default hanya melakukan dry-run dan tidak mengubah database. Foto berita dan dokumentasi disimpan di `public/uploads/`, terpisah dari database; gunakan disk persisten atau object storage yang disetujui. Cadangkan database dan unggahan, lalu uji pemulihannya. Jangan unggah `.env`, backup berisi data pengguna, atau log audit ke repositori.
 
-Admin dashboard menyediakan pengelolaan **Struktur organisasi** untuk menambah, mengedit, memindahkan, dan menghapus anggota serta mengganti foto (JPG/PNG/WebP, maksimal 3 MB). Perubahan langsung tampil di beranda. Foto yang belum diunggah ditampilkan sebagai inisial, bukan foto rekaan. Dashboard juga menyediakan formulir **Dokumentasi** untuk menerbitkan postingan album foto kegiatan secara mandiri (maksimal 10 foto per postingan, JPG/PNG/WebP, 3 MB per foto), serta menu **Pengaturan situs** untuk identitas dan kontak, banner pengumuman, dan mengaktifkan atau menonaktifkan asisten AI. Dokumentasi tidak dibuat dari berita. Kunci Groq tidak ditampilkan atau diubah dari dashboard, melainkan dikelola oleh administrator server melalui `GROQ_API_KEY`.
+Admin dashboard menyediakan pengelolaan **Struktur organisasi** untuk menambah, mengedit, memindahkan, dan menghapus anggota serta mengganti foto (JPG/PNG/WebP, maksimal 3 MB). Perubahan langsung tampil di beranda. Foto yang belum diunggah ditampilkan sebagai inisial, bukan foto rekaan. Dashboard juga menyediakan formulir **Dokumentasi** untuk menerbitkan postingan album foto kegiatan secara mandiri (maksimal 10 foto per postingan, JPG/PNG/WebP, 3 MB per foto), serta menu **Pengaturan situs** untuk identitas dan kontak serta banner pengumuman. Dokumentasi tidak dibuat dari berita. FAQ situs berisi jawaban tetap dan tidak mengirim pertanyaan ke layanan AI.
 
 Panel admin berita, komentar, dan pengaturan situs menggunakan sesi login yang sama. Pengelolaan E-IDI tidak tersedia di aplikasi ini.
 
@@ -68,12 +67,12 @@ Konfirmasi dan isi bersama pihak Bakesbangpol:
 1. Logo, foto, alamat, telepon, email, jam layanan, profil, struktur pejabat, serta tautan kanal resmi.
 2. Berita contoh dan seluruh materi publik, termasuk hak penggunaan foto.
 3. Pengelola yang bertanggung jawab atas moderasi komentar, laporan, akun admin, backup, retensi log, dan permintaan penghapusan data.
-4. Persetujuan instansi atas pemrosesan pertanyaan chatbot oleh Groq dan penggunaan aset CDN eksternal yang dijelaskan pada halaman Kebijakan.
+4. Persetujuan instansi atas penggunaan aset CDN eksternal yang dijelaskan pada halaman Kebijakan.
 5. Kebutuhan PPID dan tautan resminya. Halaman Aspirasi hanya mengarahkan ke kanal eksternal dan bukan sistem pengaduan tersimpan di situs.
 
 ## Deploy dan batas operasional
 
-Sebelum menjalankan `npm start` di produksi, atur `NODE_ENV=production`, `ADMIN_PASSWORD` acak minimal 16 karakter, dan `COOKIE_SECURE=true`. Server akan menolak startup produksi jika persyaratan password atau cookie HTTPS tidak terpenuhi. Simpan `GROQ_API_KEY` sebagai secret di lingkungan server jika AI diaktifkan.
+Sebelum menjalankan `npm start` di produksi, atur `NODE_ENV=production`, `ADMIN_PASSWORD` acak minimal 16 karakter, dan `COOKIE_SECURE=true`. Server akan menolak startup produksi jika persyaratan password atau cookie HTTPS tidak terpenuhi.
 
 Tempatkan aplikasi di belakang HTTPS yang dikelola instansi. Bila menggunakan reverse proxy, set `TRUST_PROXY_HOPS` ke jumlah hop proxy yang tepercaya dan dikendalikan sendiri (misalnya `1` untuk satu proxy); jangan percaya header proxy dari klien langsung.
 
@@ -86,7 +85,7 @@ Sesi admin, pembatasan laju, dan percobaan login masih berada di memori satu pro
 
 ## Fitur publik
 
-Komentar tidak memerlukan akun dan menunggu persetujuan admin. Pengunjung dapat membalas komentar, memberi reaksi suka/tidak suka, melaporkan komentar, dan membagikan tautan berita. Asisten informasi dapat menjawab pertanyaan bebas dengan Groq jika API key tersedia; pertanyaan dan konteks percakapan terbaru dikirim ke penyedia tersebut, sehingga pengguna harus menghindari data pribadi atau rahasia. Rincian pemrosesan data ada di halaman Kebijakan.
+Komentar tidak memerlukan akun dan menunggu persetujuan admin. Pengunjung dapat membalas komentar, memberi reaksi suka/tidak suka, melaporkan komentar, dan membagikan tautan berita. FAQ situs menyediakan jawaban tetap atas pertanyaan umum; pertanyaan tidak dikirim ke layanan AI. Rincian pemrosesan data ada di halaman Kebijakan.
 
 Galeri **Dokumentasi kegiatan** di beranda menampilkan postingan album yang diunggah admin secara mandiri. Foto dapat difilter berdasarkan bidang, dibuka dalam tampilan foto besar, dinavigasi sebagai album, dan dimuat bertahap. Admin dapat memberi judul, bidang, tanggal, dan keterangan singkat; unggahan menerima maksimal 10 foto JPG, PNG, atau WebP dengan batas 3 MB per foto. Data foto disimpan di PostgreSQL dan file gambarnya di `public/uploads/`. Migrasi `004_dokumentasi_mandiri.sql` menghapus entri galeri hasil salinan berita sebelumnya tanpa menghapus foto berita atau file yang masih dipakai berita.
 
